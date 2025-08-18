@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../config/supabase';
 import { Container, Alert, Box, Button, CircularProgress, Paper, TextField, Typography } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { isAlphaNumeric } from '../utils/isAlphaNumeric';
 
 const SetPasswordPage = () => {
   const [password, setPassword] = useState('');
@@ -70,6 +71,10 @@ const SetPasswordPage = () => {
     if (!password) {
       setError('Please enter a new password.');
       return;
+    }
+    if (!isAlphaNumeric(password)) {
+      setError('Password must contain only letters and numbers.');
+      return false;
     }
     if (password.length < 6) {
       setError('Password must be at least 6 characters long.');

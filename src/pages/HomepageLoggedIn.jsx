@@ -8,17 +8,13 @@ import CardPopup from './CardPopUp.jsx';
 import Chatbot from '../components/Chatbot.jsx';
 import { styled } from '@mui/material/styles';
 import { supabase } from '../config/supabase';
-import { FiCamera, FiUpload } from 'react-icons/fi';
-import { BiSolidImageAlt } from 'react-icons/bi';
 import { getMinimumBookingDate, restrictSacramentBooking } from '../utils/sacramentBookingRestriction.jsx';
 import WeddingDocuments from '../components/sacrament-documents/wedding-documents.jsx';
-import blobUrlToFile from '../utils/blobUrlToFile.jsx';
 import BaptismDocuments from '../components/sacrament-documents/baptism-documents.jsx';
 import BurialDocuments from '../components/sacrament-documents/burial-documents.jsx';
 import burialFormValidation from '../utils/form-validations/burialFormValidation.jsx';
 import baptismFormValidation from '../utils/form-validations/baptismFormValidation.jsx';
 import saveSpecificSacramentDocument from '../utils/form-functions/saveSpecificSacramentDocument.jsx';
-import { NoAdultContentOutlined } from '@mui/icons-material';
 import weddingFormValidation from '../utils/form-validations/weddingFormValidation.jsx';
 import saveWeddingDocument from '../utils/form-functions/saveWeddingDocument.jsx';
 import { getSacramentPrice } from '../information/getSacramentPrice.jsx';
@@ -60,9 +56,6 @@ const HomePageLoggedIn = ({ onLogout }) => {
     id: null,
   });
 
-  const [isIDProcessing, setIsIDProcessing] = useState(false);
-  const hiddenInputRef1 = useRef(null);
-
   // For Baptism Document Variables
   // Naka json na lang so all data will be stored in one state
   const [baptismForm, setBaptismForm] = useState({
@@ -99,9 +92,6 @@ const HomePageLoggedIn = ({ onLogout }) => {
     groom_permission: null,
     bride_permission: null,
   });
-  // individually initializing them is much faster, and more performance goods
-  const hiddenGroomRef = useRef(null);
-  const hiddenBrideRef = useRef(null);
 
 
   // Check authentication on mount

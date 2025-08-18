@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -21,6 +21,9 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { supabase } from './supabase';
 import ForgotPasswordDialog from '../components/dialog/ForgotPasswordDialog';
+import { isAlphaNumeric } from '../utils/isAlphaNumeric';
+import { GoogleReCaptchaCheckbox } from '@google-recaptcha/react';
+
 
 const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
   const [showLoginForm, setShowLoginForm] = useState(!isSignupMode);
@@ -48,6 +51,8 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
     confirmPassword: '',
   });
 
+  const [filledCaptcha, setFilledCaptcha] = useState(false);
+
  
 
   const validateSignupInputs = () => {
@@ -67,6 +72,11 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
     //   return false;
     // }
 
+    if (!isAlphaNumeric(signupData.password)) {
+      setError('Password must contain only letters and numbers.');
+      return false;
+    }
+
     if (signupData.password.length < 6) {
       setError('Password must be at least 6 characters.');
       return false;
@@ -76,6 +86,7 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
       setError('Passwords do not match.');
       return false;
     }
+    
 
     if (!/^\d+$/.test(signupData.user_mobile)) {
       setError('Mobile number must contain only numbers.');
@@ -83,6 +94,11 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
     }
     if (!signupData.user_mobile.startsWith('09') || signupData.user_mobile.length !== 11) {
       setError('Mobile number must be 11 digits long and start with 09.');
+      return false;
+    }
+
+    if (!filledCaptcha) {
+      setError('Please complete the CAPTCHA.');
       return false;
     }
 
@@ -238,6 +254,10 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
     setShowLoginForm(true);
     setError('');
   }
+
+  const onCaptchaChange = (value) => {
+    setFilledCaptcha(!!value);
+  };
 
   return (
     <Dialog open onClose={onClose} maxWidth="sm" fullWidth>
@@ -441,6 +461,14 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
                     required
                   />
                 </Grid>
+              </Grid>
+
+              <Grid item xs={12} sm={12}>
+                <div className='py-3'>
+                    <center>
+                      <GoogleReCaptchaCheckbox onChange={onCaptchaChange} />
+                    </center>
+                </div>
               </Grid>
 
               <Button

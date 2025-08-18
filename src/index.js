@@ -7,16 +7,19 @@ import { AuthProvider } from './context/AuthContext';
 import { AdminAuthProvider } from './context/AdminAuthContext';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { GoogleReCaptchaProvider } from '@google-recaptcha/react';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <AuthProvider>
-        <AdminAuthProvider>
-          <App />
-        </AdminAuthProvider>
-      </AuthProvider>
+      <GoogleReCaptchaProvider type='v2-checkbox' siteKey='6LdcHaUrAAAAADufiifE-YT40qMI5nSltlXwLyPA'>
+        <AuthProvider>
+          <AdminAuthProvider>
+            <App />
+          </AdminAuthProvider>
+        </AuthProvider>
+      </GoogleReCaptchaProvider>
     </LocalizationProvider>
   </React.StrictMode>
 );
