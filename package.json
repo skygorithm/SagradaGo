@@ -5,6 +5,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
+    "@google-recaptcha/react": "^2.3.2",
     "@google/generative-ai": "^0.24.1",
     "@mui/icons-material": "^5.17.1",
     "@mui/material": "^5.15.6",

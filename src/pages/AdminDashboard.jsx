@@ -49,8 +49,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, XAxis, YAxis } from 'recharts';
-import { ChurchOutlined, DisplaySettings, TableChart } from '@mui/icons-material';
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, XAxis, YAxis } from 'recharts';
+import { ChurchOutlined, TableChart } from '@mui/icons-material';
 import { applyFilters } from '../utils/admin-functions/applyFilters';
 import { handleChangeRowsPerPage, handleColumnClick, handleColumnToggle, handleFilterClick } from '../utils/admin-functions/handleFilterOptions';
 import exportToCSV from '../utils/admin-functions/exportToCSV';
@@ -739,7 +739,6 @@ const AdminDashboard = () => {
           })
           .select();
 
-        let specificInsertData = null;
         let specificTable = null;
         if (specificId) {
           if (bookingSacrament === 'Wedding') {
@@ -874,7 +873,7 @@ const AdminDashboard = () => {
       }
 
       // remnove user_firstname and user_lastname if the original table is not user_tbl
-      if (record.original_table != 'user_tbl') {
+      if (record.original_table !== 'user_tbl') {
         if ('user_firstname' in recordToRestore) {
           delete recordToRestore.user_firstname;
         }

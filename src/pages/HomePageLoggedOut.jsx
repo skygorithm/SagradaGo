@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Box, Typography, Container, Grid, Card, CardContent, CardMedia, useTheme, useMediaQuery } from '@mui/material';
+import { Button, Box, Typography, Container, Grid, Card, CardContent, useTheme, useMediaQuery } from '@mui/material';
 import { ThemeProvider, createTheme, styled } from '@mui/material/styles';
 import LoginModal from '../config/UserAuth.jsx';
 import { useAuth } from '../context/AuthContext';

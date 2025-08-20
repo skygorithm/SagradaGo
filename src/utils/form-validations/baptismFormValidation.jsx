@@ -1,10 +1,10 @@
 const baptismFormValidation = (cachedUserData, baptismForm, setErrorMessage) => {
     // Double check if required fields are filled
-    if (baptismForm.baby_name == '' || !baptismForm.baby_bday || baptismForm.baby_birthplace  == '') {
+    if (baptismForm.baby_name === '' || !baptismForm.baby_bday || baptismForm.baby_birthplace  === '') {
         setErrorMessage('Please fill in all required fields for the baby.');
         return false;
     }
-    if (baptismForm.mother_name == '' || baptismForm.mother_birthplace == '' || baptismForm.father_name == '' || baptismForm.father_birthplace == '') {
+    if (baptismForm.mother_name === '' || baptismForm.mother_birthplace === '' || baptismForm.father_name === '' || baptismForm.father_birthplace === '') {
         setErrorMessage('Please fill in all required fields for the parents.');
         return false;
     }

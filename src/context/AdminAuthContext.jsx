@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../config/supabase';
+// import { supabase } from '../config/supabase';
 
 // Default admin credentials (these would normally be in .env)
-const DEFAULT_ADMIN = {
-  email: 'admin@sagradago.com',
-  password: 'admin123456'
-};
+// const DEFAULT_ADMIN = {
+//   email: 'admin@sagradago.com',
+//   password: 'admin123456'
+// };
 
 const AdminAuthContext = createContext();
 

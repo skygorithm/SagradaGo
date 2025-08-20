@@ -3,6 +3,7 @@ import { TextField, Button, Box, Typography, Dialog, DialogTitle, DialogContent,
 import { useNavigate } from 'react-router-dom';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { supabase } from '../config/supabase';
+import { isAlphaNumeric } from '../utils/isAlphaNumeric';
 
 const ProfilePage = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -97,6 +98,12 @@ const ProfilePage = ({ onLogout }) => {
         setPasswordMessage('Please fill in both password fields.');
         return;
       }
+
+      if (!isAlphaNumeric(profile.confirmPassword)) {
+        setPasswordMessage('New Password must contain only letters and numbers.');
+        return false;
+      }
+
       if (profile.confirmPassword.length < 6) {
         setPasswordMessage('New password must be at least 6 characters.');
         return;

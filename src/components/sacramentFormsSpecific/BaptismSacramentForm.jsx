@@ -71,7 +71,7 @@ const BaptismSacramentForm = ({ data }) => {
     );
   };
 
-  const renderAdditionalSingleGender = (godparents, gender) => {
+  const renderAdditionalSingleGender = (godparents) => {
     if (!Array.isArray(godparents) || godparents.length === 0) {
       return <Typography variant="body2" color="text.secondary">None</Typography>;
     }

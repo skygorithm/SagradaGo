@@ -1,11 +1,9 @@
 import { supabase } from "../../config/supabase";
-import blobUrlToFile from "../blobUrlToFile";
 import saveSpecificSacramentDocument from "../form-functions/saveSpecificSacramentDocument";
 import saveWeddingDocument from "../form-functions/saveWeddingDocument";
 import baptismFormValidation from "../form-validations/baptismFormValidation";
 import burialFormValidation from "../form-validations/burialFormValidation";
 import weddingFormValidation from "../form-validations/weddingFormValidation";
-import getDisplaySacrament from "./displaySacrament";
 import generatePassword from "./generatePassword";
 
 const handleSave = async ({

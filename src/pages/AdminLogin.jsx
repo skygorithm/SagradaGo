@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../config/supabase';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import {
@@ -25,51 +25,51 @@ const AdminLogin = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
+  // const location = useLocation();
   const { login, logout } = useAdminAuth();
 
-  const createDefaultAdmin = async () => {
-    try {
-      // First, create the user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: DEFAULT_ADMIN.email,
-        password: DEFAULT_ADMIN.password,
-        options: {
-          data: {
-            first_name: 'Admin',
-            last_name: 'User',
-            role: 'admin'
-          }
-        }
-      });
+  // const createDefaultAdmin = async () => {
+  //   try {
+  //     // First, create the user in Supabase Auth
+  //     const { data: authData, error: authError } = await supabase.auth.signUp({
+  //       email: DEFAULT_ADMIN.email,
+  //       password: DEFAULT_ADMIN.password,
+  //       options: {
+  //         data: {
+  //           first_name: 'Admin',
+  //           last_name: 'User',
+  //           role: 'admin'
+  //         }
+  //       }
+  //     });
 
-      if (authError) {
-        console.error('Error creating default admin:', authError);
-        throw authError;
-      }
+  //     if (authError) {
+  //       console.error('Error creating default admin:', authError);
+  //       throw authError;
+  //     }
 
-      // Then, create the admin record
-      const { error: adminError } = await supabase
-        .from('admin_tbl')
-        .insert([
-          {
-            admin_email: DEFAULT_ADMIN.email,
-            admin_firstname: 'Admin',
-            admin_lastname: 'User'
-          }
-        ]);
+  //     // Then, create the admin record
+  //     const { error: adminError } = await supabase
+  //       .from('admin_tbl')
+  //       .insert([
+  //         {
+  //           admin_email: DEFAULT_ADMIN.email,
+  //           admin_firstname: 'Admin',
+  //           admin_lastname: 'User'
+  //         }
+  //       ]);
 
-      if (adminError) {
-        console.error('Error creating admin record:', adminError);
-        throw adminError;
-      }
+  //     if (adminError) {
+  //       console.error('Error creating admin record:', adminError);
+  //       throw adminError;
+  //     }
 
-      return authData;
-    } catch (error) {
-      console.error('Error in createDefaultAdmin:', error);
-      throw error;
-    }
-  };
+  //     return authData;
+  //   } catch (error) {
+  //     console.error('Error in createDefaultAdmin:', error);
+  //     throw error;
+  //   }
+  // };
 
   const handleLogin = async (e) => {
     e.preventDefault();
