@@ -149,7 +149,7 @@ const AppContent = () => {
       mounted = false;
       subscription?.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -159,7 +159,7 @@ const AppContent = () => {
     } else if (!isAuthenticated && window.location.pathname === '/home') {
       navigate('/');
     }
-  }, [isAuthenticated, isLoading]); // Navigate when auth state changes
+  }, [isAuthenticated, isLoading, navigate]); // Navigate when auth state changes
 
   const handleLoginSuccess = (userData) => {
     setIsAuthenticated(true);
