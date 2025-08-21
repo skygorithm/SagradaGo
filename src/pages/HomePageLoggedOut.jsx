@@ -12,6 +12,7 @@ const theme = createTheme({
   palette: {
     primary: {
       main: '#E1D5B8',
+      text: '#1E1E1E',
     },
   },
 });
@@ -174,13 +175,13 @@ const HomePageLoggedOut = () => {
             <div className="flex items-center space-x-4">
               <button 
                 onClick={() => handleRequireLogin(false)}
-                className="px-4 py-2 bg-[#E1D5B8] text-white rounded hover:bg-opacity-90 text-sm sm:text-base"
+                className="px-4 py-2 bg-[#E1D5B8] text-text rounded hover:bg-opacity-90 text-sm sm:text-base"
               >
                 LOGIN
               </button>
               <button 
                 onClick={() => handleRequireLogin(true)}
-                className="px-4 py-2 bg-[#E1D5B8] text-white rounded hover:bg-opacity-90 text-sm sm:text-base"
+                className="px-4 py-2 bg-[#E1D5B8] text-text rounded hover:bg-opacity-90 text-sm sm:text-base"
               >
                 JOIN NOW
               </button>
