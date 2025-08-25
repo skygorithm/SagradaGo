@@ -23,6 +23,7 @@ import { supabase } from './supabase';
 import ForgotPasswordDialog from '../components/dialog/ForgotPasswordDialog';
 import { isAlphaNumeric } from '../utils/isAlphaNumeric';
 import { GoogleReCaptchaCheckbox } from '@google-recaptcha/react';
+import isAlphabetOnly from '../utils/isAlphabetOnly';
 
 
 const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
@@ -52,8 +53,7 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
   });
 
   const [filledCaptcha, setFilledCaptcha] = useState(false);
-
- 
+  
 
   const validateSignupInputs = () => {
     if (!signupData.user_firstname || !signupData.user_lastname || !signupData.user_mobile || 
@@ -67,11 +67,24 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
       setError('Please enter a valid email address.');
       return false;
     }
-    // if (!signupData.user_email.includes('@')) {
-    //   setError('Please enter a valid email address.');
-    //   return false;
-    // }
 
+    //checks if the name fields contain only letters
+    if (!isAlphabetOnly(signupData.user_firstname)) {
+      setError('First name, Middle name and Last name must only contain letters.');
+      return false;
+    }
+    
+    if (!isAlphabetOnly(signupData.user_middle)) {
+      setError('First name, Middle name and Last name must only contain letters.');
+      return false;
+    }
+
+    if (!isAlphabetOnly(signupData.user_lastname)) {
+      setError('First name, Middle name and Last name must only contain letters.');
+      return false;
+    }
+
+    //Password validation
     if (!isAlphaNumeric(signupData.password)) {
       setError('Password must contain only letters and numbers.');
       return false;
@@ -86,8 +99,8 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
       setError('Passwords do not match.');
       return false;
     }
-    
 
+    // Mobile number validation
     if (!/^\d+$/.test(signupData.user_mobile)) {
       setError('Mobile number must contain only numbers.');
       return false;
@@ -101,7 +114,6 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
       setError('Please complete the CAPTCHA.');
       return false;
     }
-
 
     // Age validation
     const today = new Date();
