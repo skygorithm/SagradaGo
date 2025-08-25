@@ -67,7 +67,7 @@ const SetPasswordPage = () => {
 
   const handleSetPassword = async (event) => {
     event.preventDefault();
-    console.log("New |Passowrd")
+    console.log("New |Password")
     if (!password) {
       setError('Please enter a new password.');
       return;

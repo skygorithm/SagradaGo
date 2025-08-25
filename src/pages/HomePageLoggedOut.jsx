@@ -84,9 +84,9 @@ const HomePageLoggedOut = () => {
     { path: '/', label: 'HOME' },
     { label: 'DONATE', action: () => handleRequireLogin() },
     { label: 'BOOK A SERVICE', action: () => handleRequireLogin() },
-    { label: 'EVENTS', action: () => handleRequireLogin() },
+    { label: 'EVENTS', action: () => handleNavigation('/events'), highlight: false },
     { label: 'BE A VOLUNTEER', action: () => handleRequireLogin() },
-    { label: 'VIRTUAL TOUR', action: () => handleRequireLogin() }
+    { label: 'VIRTUAL TOUR', action: () => handleNavigation('/explore-parish'), highlight: false }
   ];
 
   // Navigation handlers
@@ -132,7 +132,7 @@ const HomePageLoggedOut = () => {
     {
       title: 'Virtual Tour',
       description: 'Explore our beautiful church through a virtual tour.',
-      action: () => handleRequireLogin(false)
+      action: () => handleNavigation('/explore-parish'), highlight: false
     },
   ];
 

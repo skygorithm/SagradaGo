@@ -53,7 +53,7 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
   });
 
   const [filledCaptcha, setFilledCaptcha] = useState(false);
-  
+
 
   const validateSignupInputs = () => {
     if (!signupData.user_firstname || !signupData.user_lastname || !signupData.user_mobile || 
