@@ -43,8 +43,8 @@ const Chatbot = () => {
     if (isLocalhost) {
       return 'http://localhost:5001';
     }
-    // Default for Netlify Functions deployment where Express is wrapped as a function
-    return '/.netlify/functions/server';
+    // In production, rely on same-origin \/api which Netlify redirects to the function
+    return '/api';
   };
   const API_BASE_URL = getApiBaseUrl();
   /**

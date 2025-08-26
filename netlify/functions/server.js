@@ -25,13 +25,9 @@ console.log('- Supabase Service Role Key:', process.env.REACT_SUPABASE_SERVICE_R
 // ===== Middleware Setup =====
 // Allow requests from frontend
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'https://sagradago.online',
-    'https://www.sagradago.online'
-  ],
+  origin: (origin, callback) => {
+    callback(null, true);
+  },
   methods: ['GET', 'POST'],
   credentials: true
 }));
