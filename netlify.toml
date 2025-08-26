@@ -1,2 +1,2 @@
 [functions]
-  directory = "server/server.js"
+  directory = "netlify/server.js"
