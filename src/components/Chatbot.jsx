@@ -32,6 +32,21 @@ const Chatbot = () => {
   }, [messages, loading]);
 
   // ===== Message Handling =====
+  // Resolve API base URL depending on environment (local dev, Netlify, or custom)
+  const getApiBaseUrl = () => {
+    const configuredUrl = process.env.REACT_APP_API_BASE_URL;
+    if (configuredUrl) {
+      return configuredUrl.replace(/\/$/, '');
+    }
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    if (isLocalhost) {
+      return 'http://localhost:5001';
+    }
+    // Default for Netlify Functions deployment where Express is wrapped as a function
+    return '/.netlify/functions/server';
+  };
+  const API_BASE_URL = getApiBaseUrl();
   /**
    * Sends a message to the Gemini API and handles the response
    * @param {string} message - The message to send
@@ -60,7 +75,7 @@ const Chatbot = () => {
 
       // Check server health first
       try {
-        const healthCheck = await fetch('http://localhost:5001/api/health');
+        const healthCheck = await fetch(`${API_BASE_URL}/api/health`);
         if (!healthCheck.ok) {
           throw new Error('Server is not healthy. Please try again later.');
         }
@@ -70,7 +85,7 @@ const Chatbot = () => {
       }
 
       // Make API request
-      const response = await fetch('http://localhost:5001/api/gemini', {
+      const response = await fetch(`${API_BASE_URL}/api/gemini`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,7 +112,7 @@ const Chatbot = () => {
       let errorMessage = error.message;
       
       if (error.message === 'Failed to fetch') {
-        errorMessage = 'Cannot connect to the server. Please make sure the server is running at http://localhost:5001';
+        errorMessage = `Cannot connect to the server. Please make sure the server is running at ${API_BASE_URL}`;
       }
       
       setError(errorMessage);
