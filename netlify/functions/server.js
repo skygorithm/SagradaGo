@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const serverless = require('serverless-http');
 const { createClient } = require('@supabase/supabase-js');
 
 // ===== Server Configuration =====
@@ -217,26 +218,5 @@ app.post('/admin/createUser', async (req, res) => {
   }
 });
 
-// ===== Server Startup =====
-const server = app.listen(port, async () => {
-  console.log('='.repeat(50));
-  console.log(`Server started successfully!`);
-  console.log(`Server running on port ${port}`);
-  console.log(`Health check: http://localhost:${port}/api/health`);
-  
-  // Test API on startup
-  const apiTest = await testGeminiAPI();
-  if (!apiTest) {
-    console.error('⚠️ Warning: Gemini API test failed. The chatbot may not work properly.');
-    console.error('Please check your API key and try again.');
-  } else {
-    console.log('✅ Gemini API test successful');
-  }
-  console.log('='.repeat(50));
-});
-
-// Handle server errors
-server.on('error', (error) => {
-  console.error('Server error:', error);
-  process.exit(1);
-}); 
+// ===== Netlify Function Handler =====
+module.exports.handler = serverless(app);
