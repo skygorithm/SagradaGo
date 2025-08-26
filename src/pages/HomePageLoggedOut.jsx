@@ -84,9 +84,9 @@ const HomePageLoggedOut = () => {
     { path: '/', label: 'HOME' },
     { label: 'DONATE', action: () => handleRequireLogin() },
     { label: 'BOOK A SERVICE', action: () => handleRequireLogin() },
-    { label: 'EVENTS', action: () => handleNavigation('/events'), highlight: false },
+    { path: '/events', label: 'EVENTS' },
     { label: 'BE A VOLUNTEER', action: () => handleRequireLogin() },
-    { label: 'VIRTUAL TOUR', action: () => handleNavigation('/explore-parish'), highlight: false }
+    { path: '/explore-parish', label: 'VIRTUAL TOUR' }
   ];
 
   // Navigation handlers
@@ -382,7 +382,7 @@ const HomePageLoggedOut = () => {
                   </li>
                   <li>
                     <button 
-                      onClick={() => handleRequireLogin(false)}
+                      onClick={() => handleNavigation('/events')}
                       className="text-gray-600 hover:text-[#6B5F32] transition-colors duration-200 flex items-center"
                     >
                       <span className="mr-2">→</span>
@@ -391,7 +391,7 @@ const HomePageLoggedOut = () => {
                   </li>
                   <li>
                     <button 
-                      onClick={() => handleRequireLogin(false)}
+                      onClick={() => handleNavigation('/explore-parish')}
                       className="text-gray-600 hover:text-[#6B5F32] transition-colors duration-200 flex items-center"
                     >
                       <span className="mr-2">→</span>

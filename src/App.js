@@ -201,11 +201,12 @@ const AppContent = () => {
               <HomePageLoggedIn onLogout={handleLogout} />
             </ProtectedRoute>
           } />
-          <Route path="/events" element={
+          {/* <Route path="/events" element={
             <ProtectedRoute isAuthenticated={isAuthenticated} onLoginClick={() => setShowLogin(true)}>
               <EventsPage onLogout={handleLogout} />
             </ProtectedRoute>
-          } />
+          } /> */}
+          <Route path="/events" element={<EventsPage />} />
           <Route path="/profile" element={
             <ProtectedRoute isAuthenticated={isAuthenticated} onLoginClick={() => setShowLogin(true)}>
               <ProfilePage onLogout={handleLogout} />
