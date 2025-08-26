@@ -1,2 +1,11 @@
+[build]
+  command = "npm run build"
+  publish = "build"
+
 [functions]
-  directory = "netlify/server.js"
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/server/:splat"
+  status = 200
