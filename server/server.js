@@ -8,7 +8,7 @@ const { createClient } = require('@supabase/supabase-js');
 // ===== Server Configuration =====
 const app = express();
 const port = process.env.PORT || 5001;
-const supabase = createClient(process.env.REACT_APP_SUPABASE_URL, process.env.REACT_SUPABASE_SERVICE_ROLE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 // Log server configuration
 console.log('Environment check:');
@@ -20,8 +20,9 @@ console.log('- Supabase Service Role Key:', process.env.REACT_SUPABASE_SERVICE_R
 
 // ===== Middleware Setup =====
 // Allow requests from frontend
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:5173,https://sagradago.online').split(',');
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'sagradago.online'],
+  origin: allowedOrigins,
   methods: ['GET', 'POST'],
   credentials: true
 }));
@@ -33,7 +34,8 @@ app.use(express.json());
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   if (req.method === 'POST') {
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    const bodyKeys = Object.keys(req.body || {});
+    console.log('Request body keys:', bodyKeys);
   }
   next();
 });
