@@ -78,38 +78,43 @@ const AdminLogin = () => {
     console.log('Login started:', new Date().toISOString());
 
     try {
-      // Check if admin exists with provided email and password
-      const { data: admin, error: adminError } = await supabase
+      // Sign in via Supabase Auth
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (signInError) {
+        throw new Error(signInError.message || 'Authentication failed');
+      }
+
+      const user = signInData.user;
+      if (!user) {
+        throw new Error('Authentication failed');
+      }
+
+      // Check admin profile gating
+      const { data: adminRecord, error: adminError } = await supabase
         .from('admin_tbl')
         .select('*')
-        .eq('admin_email', email)
-        .eq('admin_pword', password)
+        .eq('admin_email', user.email)
         .eq('is_deleted', false)
         .eq('status', 'active')
         .single();
 
-      console.log('admin check completed:', new Date().toISOString());
-
-      if (adminError) {
-        console.error('admin check error:', adminError);
-        throw adminError;
+      if (adminError || !adminRecord) {
+        await supabase.auth.signOut();
+        throw new Error('You do not have admin access');
       }
 
-      if (!admin) {
-        throw new Error('Invalid email or password');
-      }
-
-      // Store admin data in localStorage
       const adminData = {
-        id: admin.id,
-        email: admin.admin_email,
-        firstName: admin.admin_firstname,
-        lastName: admin.admin_lastname
+        id: adminRecord.id,
+        email: adminRecord.admin_email,
+        firstName: adminRecord.admin_firstname,
+        lastName: adminRecord.admin_lastname
       };
 
-      // Call login function from AdminAuthContext
       login(adminData);
-      console.log('Login successful:', new Date().toISOString());
       navigate('/admin');
     } catch (error) {
       console.error('Login error:', error);
