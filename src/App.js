@@ -197,7 +197,7 @@ const AppContent = () => {
             />
           } />
           <Route path="/home" element={
-            <ProtectedRoute isAuthenticated={isAuthenticated} onLoginClick={() => setShowLogin(true)}>
+            <ProtectedRoute onLoginClick={() => setShowLogin(true)}>
               <HomePageLoggedIn onLogout={handleLogout} />
             </ProtectedRoute>
           } />
@@ -208,7 +208,7 @@ const AppContent = () => {
           } /> */}
           <Route path="/events" element={<EventsPage />} />
           <Route path="/profile" element={
-            <ProtectedRoute isAuthenticated={isAuthenticated} onLoginClick={() => setShowLogin(true)}>
+            <ProtectedRoute onLoginClick={() => setShowLogin(true)}>
               <ProfilePage onLogout={handleLogout} />
             </ProtectedRoute>
           } />

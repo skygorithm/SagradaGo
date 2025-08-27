@@ -60,7 +60,7 @@ const Chatbot = () => {
 
       // Check server health first
       try {
-        const healthCheck = await fetch('http://localhost:5001/api/health');
+        const healthCheck = await fetch('/api/gemini/health');
         if (!healthCheck.ok) {
           throw new Error('Server is not healthy. Please try again later.');
         }
@@ -70,7 +70,7 @@ const Chatbot = () => {
       }
 
       // Make API request
-      const response = await fetch('http://localhost:5001/api/gemini', {
+      const response = await fetch('/api/gemini', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,9 +79,16 @@ const Chatbot = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('[Chatbot Debug] Server error:', errorData);
-        throw new Error(errorData.error || 'Failed to process message');
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          console.error('[Chatbot Debug] Server error:', errorData);
+          throw new Error(errorData.error || 'Failed to process message');
+        } else {
+          const errorText = await response.text();
+          console.error('[Chatbot Debug] Server returned non-JSON response:', errorText);
+          throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
       }
 
       const data = await response.json();
@@ -97,7 +104,9 @@ const Chatbot = () => {
       let errorMessage = error.message;
       
       if (error.message === 'Failed to fetch') {
-        errorMessage = 'Cannot connect to the server. Please make sure the server is running at http://localhost:5001';
+        errorMessage = 'Cannot connect to the server. Please make sure the server is running.';
+      } else if (error.message.includes('Unexpected token')) {
+        errorMessage = 'Server returned invalid response. Please check server configuration.';
       }
       
       setError(errorMessage);
@@ -120,29 +129,27 @@ const Chatbot = () => {
    * @param {number} i - The message index
    */
   const renderMessage = (msg, i) => (
-    <>
-      <Box
-        key={i}
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-          gap: 0.5
-        }}
-      >
-        <Box sx={{
-          background: msg.role === 'user' ? '#E1D5B8' : '#e3e3e3',
-          color: '#222',
-          borderRadius: 2,
-          p: 1.5,
-          maxWidth: '80%',
-          wordBreak: 'break-word'
-        }}>
-          {/* <Typography variant="body1">{msg.parts[0].text}</Typography> */}
-          <Markdown>{msg.parts[0].text}</Markdown>
-        </Box>
+    <Box
+      key={i}
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
+        gap: 0.5
+      }}
+    >
+      <Box sx={{
+        background: msg.role === 'user' ? '#E1D5B8' : '#e3e3e3',
+        color: '#222',
+        borderRadius: 2,
+        p: 1.5,
+        maxWidth: '80%',
+        wordBreak: 'break-word'
+      }}>
+        {/* <Typography variant="body1">{msg.parts[0].text}</Typography> */}
+        <Markdown>{msg.parts[0].text}</Markdown>
       </Box>
-    </>
+    </Box>
   );
 
   // ===== Main Render =====

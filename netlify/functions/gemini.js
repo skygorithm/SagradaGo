@@ -2,32 +2,18 @@ const express = require('express');
 const serverless = require('serverless-http');
 const cors = require('cors');
 const axios = require('axios');
-const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
-// ===== Server Configuration =====
+// Create an Express app
 const app = express();
-const supabase = createClient(process.env.REACT_APP_SUPABASE_URL, process.env.REACT_SUPABASE_SERVICE_ROLE_KEY);
 
-// ===== Middleware Setup =====
-// Allow requests from frontend
+// Middleware
 app.use(cors({
   origin: ['http://localhost:3000', 'http://localhost:5173', 'https://sagradago.online', 'sagradago.online'],
   methods: ['GET', 'POST'],
   credentials: true
 }));
-
-// Parse JSON request bodies
 app.use(express.json());
-
-// Log all incoming requests
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  if (req.method === 'POST') {
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
-  }
-  next();
-});
 
 // ===== Helper Functions =====
 /**
@@ -139,11 +125,20 @@ app.post('/', async (req, res) => {
  */
 app.get('/health', async (req, res) => {
   try {
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({
+        status: 'error',
+        error: 'GEMINI_API_KEY is not configured in environment variables.',
+        apiKeyConfigured: false,
+        apiTestSuccessful: false,
+        details: 'Set GEMINI_API_KEY in your Netlify environment variables.'
+      });
+    }
     const apiTest = await testGeminiAPI();
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      apiKeyConfigured: !!process.env.GEMINI_API_KEY,
+      apiKeyConfigured: true,
       apiTestSuccessful: apiTest,
       environment: process.env.NODE_ENV || 'development'
     });
@@ -155,52 +150,6 @@ app.get('/health', async (req, res) => {
       apiKeyConfigured: !!process.env.GEMINI_API_KEY,
       apiTestSuccessful: false,
       details: error.response?.data || error.stack
-    });
-  }
-});
-
-app.post('/admin/createUser', async (req, res) => {
-  try {
-    const { email, randomPassword } = req.body;
-    if (!email || !randomPassword) {
-      return res.status(400).json({ 
-        status: 'error', 
-        message: 'Email and random password are required',
-        user: null,
-        details: 'Missing email or random password in request body'
-      });
-    }
-    const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-      // redirectTo: `http://localhost:3000/set-password`,
-      redirectTo: `https://sagradago.online/set-password`,
-    });
-
-    if (error) {
-      console.error('Error from Supabase:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: error,
-        details: error,
-        user: null
-      });
-    }
-
-    res.json({
-      status: 'success',
-      message: 'User has been invited to join SagradaGo. They are sent an invite link to set their password before accessing the system.',
-      details: 'User has been invited to join SagradaGo',
-      user: data.user
-    });
-
-    // Create a new user in the SagradaGo system
-
-  } catch (error) {
-    console.error('Error creating user:', error);
-    res.status(500).json({ 
-      status: 'error',
-      message: error.message || 'Failed to create user',
-      details: error.response?.data || error.stack ,
-      user: null
     });
   }
 });
