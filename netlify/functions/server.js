@@ -7,12 +7,21 @@ require('dotenv').config();
 
 // ===== Server Configuration =====
 const app = express();
+const port = process.env.PORT || 5001;
 const supabase = createClient(process.env.REACT_APP_SUPABASE_URL, process.env.REACT_SUPABASE_SERVICE_ROLE_KEY);
+
+// Log server configuration
+console.log('Environment check:');
+console.log('- PORT:', process.env.PORT || 5001);
+console.log('- NODE_ENV:', process.env.NODE_ENV || 'development');
+console.log('- API Key configured:', !!process.env.GEMINI_API_KEY);
+console.log('- Supabase URL:', process.env.REACT_APP_SUPABASE_URL ? 'Configured' : 'Not configured');
+console.log('- Supabase Service Role Key:', process.env.REACT_SUPABASE_SERVICE_ROLE_KEY ? 'Configured' : 'Not configured');
 
 // ===== Middleware Setup =====
 // Allow requests from frontend
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'https://sagradago.online', 'sagradago.online'],
+  origin: ['http://localhost:3000', 'http://localhost:5173', 'sagradago.online'],
   methods: ['GET', 'POST'],
   credentials: true
 }));
@@ -62,7 +71,7 @@ async function testGeminiAPI() {
  * POST /
  * Body: { message: string, history: Array }
  */
-app.post('/', async (req, res) => {
+app.post('/api/gemini', async (req, res) => {
   try {
     const { message, history } = req.body;
     
@@ -137,7 +146,7 @@ app.post('/', async (req, res) => {
  * Health check endpoint to verify server and API status
  * GET /health
  */
-app.get('/health', async (req, res) => {
+app.get('/api/health', async (req, res) => {
   try {
     const apiTest = await testGeminiAPI();
     res.json({
@@ -170,6 +179,15 @@ app.post('/admin/createUser', async (req, res) => {
         details: 'Missing email or random password in request body'
       });
     }
+    if (!supabase) {
+      return res.status(503).json({
+        status: 'error',
+        message: 'Supabase is not configured on this server',
+        user: null,
+        details: 'Missing REACT_APP_SUPABASE_URL or REACT_SUPABASE_SERVICE_ROLE_KEY'
+      });
+    }
+
     const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
       // redirectTo: `http://localhost:3000/set-password`,
       redirectTo: `https://sagradago.online/set-password`,
@@ -205,5 +223,5 @@ app.post('/admin/createUser', async (req, res) => {
   }
 });
 
-// Export the handler for Netlify Functions
-exports.handler = serverless(app);
+// Export Netlify handler
+module.exports.handler = serverless(app);

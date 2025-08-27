@@ -8,7 +8,10 @@ const { createClient } = require('@supabase/supabase-js');
 // ===== Server Configuration =====
 const app = express();
 const port = process.env.PORT || 5001;
-const supabase = createClient(process.env.REACT_APP_SUPABASE_URL, process.env.REACT_SUPABASE_SERVICE_ROLE_KEY);
+const hasSupabaseConfig = !!(process.env.REACT_APP_SUPABASE_URL && process.env.REACT_SUPABASE_SERVICE_ROLE_KEY);
+const supabase = hasSupabaseConfig
+  ? createClient(process.env.REACT_APP_SUPABASE_URL, process.env.REACT_SUPABASE_SERVICE_ROLE_KEY)
+  : null;
 
 // Log server configuration
 console.log('Environment check:');
@@ -21,7 +24,7 @@ console.log('- Supabase Service Role Key:', process.env.REACT_SUPABASE_SERVICE_R
 // ===== Middleware Setup =====
 // Allow requests from frontend
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'https://sagradago.online', 'sagradago.online'],
+  origin: ['http://localhost:3000', 'http://localhost:5173', 'sagradago.online'],
   methods: ['GET', 'POST'],
   credentials: true
 }));
@@ -148,25 +151,14 @@ app.post('/api/gemini', async (req, res) => {
  * GET /api/health
  */
 app.get('/api/health', async (req, res) => {
-  try {
-    const apiTest = await testGeminiAPI();
-    res.json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      apiKeyConfigured: !!process.env.GEMINI_API_KEY,
-      apiTestSuccessful: apiTest,
-      environment: process.env.NODE_ENV || 'development'
-    });
-  } catch (error) {
-    console.error('Health check failed:', error);
-    res.status(500).json({
-      status: 'error',
-      error: error.message,
-      apiKeyConfigured: !!process.env.GEMINI_API_KEY,
-      apiTestSuccessful: false,
-      details: error.response?.data || error.stack
-    });
-  }
+  const apiTest = await testGeminiAPI().catch(() => false);
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    apiKeyConfigured: !!process.env.GEMINI_API_KEY,
+    apiTestSuccessful: apiTest,
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
 app.post('/admin/createUser', async (req, res) => {
@@ -180,6 +172,15 @@ app.post('/admin/createUser', async (req, res) => {
         details: 'Missing email or random password in request body'
       });
     }
+    if (!supabase) {
+      return res.status(503).json({
+        status: 'error',
+        message: 'Supabase is not configured on this server',
+        user: null,
+        details: 'Missing REACT_APP_SUPABASE_URL or REACT_SUPABASE_SERVICE_ROLE_KEY'
+      });
+    }
+
     const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
       // redirectTo: `http://localhost:3000/set-password`,
       redirectTo: `https://sagradago.online/set-password`,
