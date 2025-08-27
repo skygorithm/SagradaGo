@@ -6,8 +6,13 @@
   directory = "netlify/functions"
 
 [[redirects]]
+  from = "/api/gemini/*"
+  to = "/.netlify/functions/gemini/:splat"
+  status = 200
+
+[[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  to = "/.netlify/functions/server/:splat"
   status = 200
 
 [[redirects]]
