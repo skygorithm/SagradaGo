@@ -35,8 +35,20 @@ app.use(express.json());
 // Log all incoming requests
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+
+  // Log memory usage
+  const memUsage = process.memoryUsage();
+  console.log(`Memory Usage - RSS: ${(memUsage.rss / 1024 / 1024).toFixed(2)}MB, Heap Used: ${(memUsage.heapUsed / 1024 / 1024).toFixed(2)}MB, Heap Total: ${(memUsage.heapTotal / 1024 / 1024).toFixed(2)}MB`);
+
   if (req.method === 'POST') {
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    const bodySize = JSON.stringify(req.body).length;
+    console.log(`Request body size: ${(bodySize / 1024).toFixed(2)}KB`);
+    // Only log body if it's not too large to prevent memory issues
+    if (bodySize < 10000) { // 10KB limit
+      console.log('Request body:', JSON.stringify(req.body, null, 2));
+    } else {
+      console.log('Request body too large to log (size > 10KB)');
+    }
   }
   next();
 });

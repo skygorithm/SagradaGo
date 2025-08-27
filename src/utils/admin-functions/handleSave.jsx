@@ -475,6 +475,11 @@ const handleSacramentSave = async ({
         let specificDocumentTable = {}
         if (selectedSacrament === 'wedding') {
           // Create new wedding booking
+          console.log(`[MEMORY] Starting wedding document processing`);
+
+          const memUsageWeddingStart = process.memoryUsage();
+          console.log(`[MEMORY] Wedding start - Heap Used: ${(memUsageWeddingStart.heapUsed / 1024 / 1024).toFixed(2)}MB`);
+
           specificDocumentTable = {
             ...specificDocumentTable,
             ...formData.weddingForm,
@@ -487,43 +492,78 @@ const handleSacramentSave = async ({
 
           const weddingGroomFullname = specificDocumentTable.groom_fullname;
           const weddingBrideFullname = specificDocumentTable.bride_fullname;
-          
-          // Upload IDs
+
+          // Upload IDs in batches to manage memory
+          console.log(`[MEMORY] Starting batch 1: Main photos`);
+
           const groom1x1Url = await saveWeddingDocument(datenow, "Groom 1x1", specificDocumentTable.groom_1x1, `${username}_groom_pic_${weddingGroomFullname}.png`, setError);
           if (!groom1x1Url) {
             return;
           }
           specificDocumentTable.groom_1x1 = groom1x1Url;
+          // Clear the original blob URL reference
+          formData.weddingForm.groom_1x1 = null;
 
           const bride1x1Url = await saveWeddingDocument(datenow, "Bride 1x1", specificDocumentTable.bride_1x1, `${username}_bride_pic_${weddingBrideFullname}.png`, setError);
           if (!bride1x1Url) {
             return;
           }
           specificDocumentTable.bride_1x1 = bride1x1Url;
+          formData.weddingForm.bride_1x1 = null;
+
+          const memUsageAfterBatch1 = process.memoryUsage();
+          console.log(`[MEMORY] After batch 1 - Heap Used: ${(memUsageAfterBatch1.heapUsed / 1024 / 1024).toFixed(2)}MB, Increase: ${((memUsageAfterBatch1.heapUsed - memUsageWeddingStart.heapUsed) / 1024 / 1024).toFixed(2)}MB`);
+
+          // Force GC and small delay between batches
+          if (global.gc) {
+            global.gc();
+            console.log(`[MEMORY] After GC batch 1 - Heap Used: ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB`);
+          }
+          await new Promise(resolve => setTimeout(resolve, 200));
+
+          // Start batch 2: Certificates
+          console.log(`[MEMORY] Starting batch 2: Certificates`);
           
           const groomBaptismalUrl = await saveWeddingDocument(datenow, "Groom Baptismal", specificDocumentTable.groom_baptismal_cert, `${username}_groom_baptismal_${weddingGroomFullname}.png`, setError);
           if (!groomBaptismalUrl) {
             return;
           }
           specificDocumentTable.groom_baptismal_cert = groomBaptismalUrl;
+          formData.weddingForm.groom_baptismal_cert = null;
 
           const brideBaptismalUrl = await saveWeddingDocument(datenow, "Bride Baptismal", specificDocumentTable.bride_baptismal_cert, `${username}_bride_baptismal_${weddingBrideFullname}.png`, setError);
           if (!brideBaptismalUrl) {
             return;
           }
           specificDocumentTable.bride_baptismal_cert = brideBaptismalUrl;
+          formData.weddingForm.bride_baptismal_cert = null;
 
           const groomConfirmationUrl = await saveWeddingDocument(datenow, "Groom Confirmation", specificDocumentTable.groom_confirmation_cert, `${username}_groom_confirmation_${weddingGroomFullname}.png`, setError);
           if (!groomConfirmationUrl) {
             return;
           }
           specificDocumentTable.groom_confirmation_cert = groomConfirmationUrl;
+          formData.weddingForm.groom_confirmation_cert = null;
 
           const brideConfirmationUrl = await saveWeddingDocument(datenow, "Bride Confirmation", specificDocumentTable.bride_confirmation_cert, `${username}_bride_confirmation_${weddingBrideFullname}.png`, setError);
           if (!brideConfirmationUrl) {
             return;
           }
           specificDocumentTable.bride_confirmation_cert = brideConfirmationUrl;
+          formData.weddingForm.bride_confirmation_cert = null;
+
+          const memUsageAfterBatch2 = process.memoryUsage();
+          console.log(`[MEMORY] After batch 2 - Heap Used: ${(memUsageAfterBatch2.heapUsed / 1024 / 1024).toFixed(2)}MB, Increase: ${((memUsageAfterBatch2.heapUsed - memUsageAfterBatch1.heapUsed) / 1024 / 1024).toFixed(2)}MB`);
+
+          // Force GC and delay between batches
+          if (global.gc) {
+            global.gc();
+            console.log(`[MEMORY] After GC batch 2 - Heap Used: ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB`);
+          }
+          await new Promise(resolve => setTimeout(resolve, 200));
+
+          // Start batch 3: Optional documents
+          console.log(`[MEMORY] Starting batch 3: Optional documents`);
 
           if (specificDocumentTable.groom_cenomar) {
             const groomCENOMARUrl = await saveWeddingDocument(datenow, "Groom CENOMAR", specificDocumentTable.groom_cenomar, `${username}_groom_cenomar_${weddingGroomFullname}.png`, setError);
@@ -531,6 +571,7 @@ const handleSacramentSave = async ({
               return;
             }
             specificDocumentTable.groom_cenomar = groomCENOMARUrl;
+            formData.weddingForm.groom_cenomar = null;
           }
           if (specificDocumentTable.bride_cenomar) {
             const brideCENOMARUrl = await saveWeddingDocument(datenow, "Bride CENOMAR", specificDocumentTable.bride_cenomar, `${username}_bride_cenomar_${weddingBrideFullname}.png`, setError);
@@ -538,6 +579,7 @@ const handleSacramentSave = async ({
               return;
             }
             specificDocumentTable.bride_cenomar = brideCENOMARUrl;
+            formData.weddingForm.bride_cenomar = null;
           }
           if (specificDocumentTable.marriage_license) {
             const marriageLicenseUrl = await saveWeddingDocument(datenow, "Marriage License", specificDocumentTable.marriage_license, `${username}_marriage_license_${weddingGroomFullname}_${weddingBrideFullname}.png`, setError);
@@ -545,6 +587,7 @@ const handleSacramentSave = async ({
               return;
             }
             specificDocumentTable.marriage_license = marriageLicenseUrl;
+            formData.weddingForm.marriage_license = null;
           }
           if (specificDocumentTable.marriage_contract) {
             const marriageContractUrl = await saveWeddingDocument(datenow, "Marriage Contract", specificDocumentTable.marriage_contract, `${username}_marriage_contract_${weddingGroomFullname}_${weddingBrideFullname}.png`, setError);
@@ -552,30 +595,47 @@ const handleSacramentSave = async ({
               return;
             }
             specificDocumentTable.marriage_contract = marriageContractUrl;
+            formData.weddingForm.marriage_contract = null;
           }
           const groomBannsUrl = await saveWeddingDocument(datenow, "Groom Banns", specificDocumentTable.groom_banns, `${username}_groom_banns_${weddingGroomFullname}.png`, setError);
           if (!groomBannsUrl) {
             return;
           }
           specificDocumentTable.groom_banns = groomBannsUrl;
+          formData.weddingForm.groom_banns = null;
 
           const brideBannsUrl = await saveWeddingDocument(datenow, "Bride Banns", specificDocumentTable.bride_banns, `${username}_bride_banns_${weddingBrideFullname}.png`, setError);
           if (!brideBannsUrl) {
             return;
           }
           specificDocumentTable.bride_banns = brideBannsUrl;
+          formData.weddingForm.bride_banns = null;
 
           const groomPermissionUrl = await saveWeddingDocument(datenow, "Groom Permission", specificDocumentTable.groom_permission, `${username}_groom_permission_${weddingGroomFullname}.png`, setError);
           if (!groomPermissionUrl) {
             return;
           }
           specificDocumentTable.groom_permission = groomPermissionUrl;
+          formData.weddingForm.groom_permission = null;
 
           const bridePermissionUrl = await saveWeddingDocument(datenow, "Bride Permission", specificDocumentTable.bride_permission, `${username}_bride_permission_${weddingBrideFullname}.png`, setError);
           if (!bridePermissionUrl) {
             return;
           }
           specificDocumentTable.bride_permission = bridePermissionUrl;
+          formData.weddingForm.bride_permission = null;
+
+          const memUsageAfterBatch3 = process.memoryUsage();
+          console.log(`[MEMORY] After batch 3 - Heap Used: ${(memUsageAfterBatch3.heapUsed / 1024 / 1024).toFixed(2)}MB, Increase: ${((memUsageAfterBatch3.heapUsed - memUsageAfterBatch2.heapUsed) / 1024 / 1024).toFixed(2)}MB`);
+
+          const memUsageWeddingEnd = process.memoryUsage();
+          console.log(`[MEMORY] Wedding documents end - Heap Used: ${(memUsageWeddingEnd.heapUsed / 1024 / 1024).toFixed(2)}MB, Total Increase: ${((memUsageWeddingEnd.heapUsed - memUsageWeddingStart.heapUsed) / 1024 / 1024).toFixed(2)}MB`);
+
+          // Final GC to clean up any remaining memory
+          if (global.gc) {
+            global.gc();
+            console.log(`[MEMORY] Final GC - Heap Used: ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)}MB`);
+          }
 
           // Prepare the wedding booking data
           setSuccess('Wedding booking added successfully');
