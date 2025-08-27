@@ -8,7 +8,9 @@ require('dotenv').config();
 // ===== Server Configuration =====
 const app = express();
 const port = process.env.PORT || 5001;
-const supabase = createClient(process.env.REACT_APP_SUPABASE_URL, process.env.REACT_SUPABASE_SERVICE_ROLE_KEY);
+const supabase = process.env.REACT_APP_SUPABASE_URL && process.env.REACT_SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(process.env.REACT_APP_SUPABASE_URL, process.env.REACT_SUPABASE_SERVICE_ROLE_KEY)
+  : null;
 
 // Log server configuration
 console.log('Environment check:');
@@ -181,8 +183,8 @@ app.post('/admin/createUser', async (req, res) => {
   try {
     const { email, randomPassword } = req.body;
     if (!email || !randomPassword) {
-      return res.status(400).json({ 
-        status: 'error', 
+      return res.status(400).json({
+        status: 'error',
         message: 'Email and random password are required',
         user: null,
         details: 'Missing email or random password in request body'
@@ -197,16 +199,6 @@ app.post('/admin/createUser', async (req, res) => {
       });
     }
     
-    // Additional check for Supabase configuration
-    if (!process.env.REACT_APP_SUPABASE_URL || !process.env.REACT_SUPABASE_SERVICE_ROLE_KEY) {
-      return res.status(503).json({
-        status: 'error',
-        message: 'Supabase configuration is missing in environment variables.',
-        user: null,
-        details: 'Both REACT_APP_SUPABASE_URL and REACT_SUPABASE_SERVICE_ROLE_KEY must be set.'
-      });
-    }
-
     const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
       // redirectTo: `http://localhost:3000/set-password`,
       redirectTo: `https://sagradago.online/set-password`,
