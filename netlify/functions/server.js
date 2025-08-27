@@ -77,7 +77,7 @@ async function testGeminiAPI() {
  * POST /api/gemini
  * Body: { message: string, history: Array }
  */
-app.post('/api/gemini', async (req, res) => {
+app.post('/gemini', async (req, res) => {
   try {
     const { message, history } = req.body;
     
@@ -153,7 +153,7 @@ app.post('/api/gemini', async (req, res) => {
  * Health check endpoint to verify server and API status
  * GET /api/health
  */
-app.get('/api/health', async (req, res) => {
+app.get('/health', async (req, res) => {
   const apiTest = await testGeminiAPI().catch(() => false);
   res.json({
     status: 'ok',
