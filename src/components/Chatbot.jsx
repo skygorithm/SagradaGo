@@ -32,7 +32,7 @@ const Chatbot = () => {
   }, [messages, loading]);
 
   // ===== Message Handling =====
-  // Resolve API base URL depending on environment (local dev, Netlify, or custom)
+  // Resolve API base URL depending on environment (local dev uses server port, prod uses Netlify redirect)
   const getApiBaseUrl = () => {
     const configuredUrl = process.env.REACT_APP_API_BASE_URL;
     if (configuredUrl) {
@@ -41,9 +41,10 @@ const Chatbot = () => {
     const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
     if (isLocalhost) {
-      return 'http://localhost:5001';
+      // Local server exposes endpoints under /api
+      return 'http://localhost:5001/api';
     }
-    // In production, rely on same-origin \/api which Netlify redirects to the function
+    // In production, rely on same-origin /api which Netlify redirects to the function
     return '/api';
   };
   const API_BASE_URL = getApiBaseUrl();
@@ -75,7 +76,7 @@ const Chatbot = () => {
 
       // Check server health first
       try {
-        const healthCheck = await fetch(`${API_BASE_URL}/api/health`);
+        const healthCheck = await fetch(`${API_BASE_URL}/health`);
         if (!healthCheck.ok) {
           throw new Error('Server is not healthy. Please try again later.');
         }
@@ -85,7 +86,7 @@ const Chatbot = () => {
       }
 
       // Make API request
-      const response = await fetch(`${API_BASE_URL}/api/gemini`, {
+      const response = await fetch(`${API_BASE_URL}/gemini`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
