@@ -4,7 +4,7 @@ services:
     name: sagradago-backend
     env: node
     buildCommand: cd server && npm install
-    startCommand: cd server && node server.js
+    startCommand: cd server && npm start
     envVars:
       - key: PORT
         value: 5001
@@ -17,5 +17,5 @@ services:
     staticPublishPath: build
     routes:
       - type: rewrite
-        source: /api/*
-        destination: http://sagradago-backend:5001/api/
+        source: /api/:path*
+        destination: http://sagradago-backend:5001/api/:path*
