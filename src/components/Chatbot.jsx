@@ -42,13 +42,13 @@ const Chatbot = () => {
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
     if (isLocalhost) {
       // Local server exposes endpoints under /api
-      return 'http://localhost:5001/api/gemini';
+      return 'http://localhost:5001';
     }
-    // In production, rely on same-origin /api/gemini which Netlify redirects to the function
-    return '/api/gemini';
+    // In production, rely on same-origin /api which Netlify redirects to the function
+    return '/api';
   };
-  const API_GEMINI_URL = getApiBaseUrl();
-  const API_HEALTH_URL = API_GEMINI_URL + '/health';
+  const API_GEMINI_URL = getApiBaseUrl() + '/gemini';
+  const API_HEALTH_URL = getApiBaseUrl() + '/health';
   /**
    * Sends a message to the Gemini API and handles the response
    * @param {string} message - The message to send
@@ -121,7 +121,7 @@ const Chatbot = () => {
       let errorMessage = error.message;
       
       if (error.message === 'Failed to fetch') {
-        errorMessage = 'Cannot connect to the server. Please make sure the server is running at http://localhost:5001';
+        errorMessage = 'Cannot connect to the server. Please make sure the server is running.';
       }
       
       setError(errorMessage);

@@ -21,7 +21,7 @@ console.log('- Supabase Service Role Key:', process.env.REACT_SUPABASE_SERVICE_R
 // ===== Middleware Setup =====
 // Allow requests from frontend
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'sagradago.online'],
+  origin: ['http://localhost:3000', 'http://localhost:5173', 'https://sagradago.online', 'sagradago.online'],
   methods: ['GET', 'POST'],
   credentials: true
 }));
@@ -148,11 +148,20 @@ app.post('/', async (req, res) => {
  */
 app.get('/health', async (req, res) => {
   try {
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({
+        status: 'error',
+        error: 'GEMINI_API_KEY is not configured in environment variables.',
+        apiKeyConfigured: false,
+        apiTestSuccessful: false,
+        details: 'Set GEMINI_API_KEY in your Netlify environment variables.'
+      });
+    }
     const apiTest = await testGeminiAPI();
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      apiKeyConfigured: !!process.env.GEMINI_API_KEY,
+      apiKeyConfigured: true,
       apiTestSuccessful: apiTest,
       environment: process.env.NODE_ENV || 'development'
     });
@@ -185,6 +194,16 @@ app.post('/admin/createUser', async (req, res) => {
         message: 'Supabase is not configured on this server',
         user: null,
         details: 'Missing REACT_APP_SUPABASE_URL or REACT_SUPABASE_SERVICE_ROLE_KEY'
+      });
+    }
+    
+    // Additional check for Supabase configuration
+    if (!process.env.REACT_APP_SUPABASE_URL || !process.env.REACT_SUPABASE_SERVICE_ROLE_KEY) {
+      return res.status(503).json({
+        status: 'error',
+        message: 'Supabase configuration is missing in environment variables.',
+        user: null,
+        details: 'Both REACT_APP_SUPABASE_URL and REACT_SUPABASE_SERVICE_ROLE_KEY must be set.'
       });
     }
 

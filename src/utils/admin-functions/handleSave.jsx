@@ -180,7 +180,7 @@ const handleSave = async ({
           let email =  formData.user_email;
           // call the api createUser endpoint to create the user, and send an invite link for them to set the password
           // Note: the localhost:5001 link should be changed when pushing into production depending on where will you host the server
-          const createUserResponse = await fetch('http://localhost:5001/admin/createUser', {
+          const createUserResponse = await fetch('/api/createUser', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
