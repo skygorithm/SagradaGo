@@ -36,7 +36,7 @@
   "scripts": {
     "start": "react-scripts start",
     "serve:api": "node server/server.js",
-    "build": "ESLINT_NO_DEV_ERRORS=true npx react-scripts build",
+    "build": "cross-env ESLINT_NO_DEV_ERRORS=true react-scripts build",
     "build:functions": "cd netlify/functions && npm i --omit=dev && cd - >/dev/null 2>&1 || true",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
