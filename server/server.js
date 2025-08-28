@@ -91,6 +91,11 @@ app.use((req, res, next) => {
   }
   next();
 });
+app.use('/api', (req, res, next) => {
+  const target = `https://sagradago.onrender.com${req.originalUrl}`;
+  console.log(`Redirecting API request to ${target}`);
+  res.redirect(307, target);
+});
 
 // ===== Helper Functions =====
 /**
