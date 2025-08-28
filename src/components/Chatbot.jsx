@@ -32,18 +32,19 @@ const Chatbot = () => {
   }, [messages, loading]);
 
   // ===== Message Handling =====
-  // Resolve API base URL depending on environment (local dev uses server port, prod uses Netlify redirect)
+  // Resolve API base URL depending on environment (local dev uses server port, prod uses configured URL)
   const getApiBaseUrl = () => {
     // Use environment variable for API URL
     const apiUrl = process.env.REACT_APP_API_URL || 'https://sagradago-backend.onrender.com';
     const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-    
+
     if (isLocalhost) {
-      console.log('Using production API endpoint in Chatbot: https://sagradago.onrender.com');
-      return 'https://sagradago.onrender.com';
+      console.log('Using local development API endpoint: http://localhost:5001');
+      return 'http://localhost:5001';
     }
-    
+
+    console.log('Using production API endpoint:', apiUrl);
     return apiUrl;
   };
   const API_GEMINI_URL = getApiBaseUrl() + '/gemini';
