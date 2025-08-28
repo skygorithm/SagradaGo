@@ -4,10 +4,22 @@ services:
     name: sagradago-backend
     env: node
     buildCommand: cd server && npm install
-    startCommand: cd server && npm start
+    startCommand: cd server && node server.js
     envVars:
       - key: PORT
         value: 5001
+      - key: NODE_ENV
+        value: production
+    headers:
+      - path: /*
+        name: Access-Control-Allow-Origin
+        value: https://sagradago.online
+      - path: /*
+        name: Access-Control-Allow-Methods
+        value: GET, POST, OPTIONS
+      - path: /*
+        name: Access-Control-Allow-Headers
+        value: Content-Type, Authorization
 
   # Frontend service
   - type: web

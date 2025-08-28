@@ -22,11 +22,37 @@ console.log('- Supabase URL:', process.env.REACT_APP_SUPABASE_URL ? 'Configured'
 console.log('- Supabase Service Role Key:', process.env.REACT_SUPABASE_SERVICE_ROLE_KEY ? 'Configured' : 'Not configured');
 
 // ===== Middleware Setup =====
+// Validate host headers
+app.use((req, res, next) => {
+  const allowedHosts = [
+    'localhost',
+    'sagradago.onrender.com',
+    'sagradago.online',
+    'www.sagradago.online'
+  ];
+  
+  const host = req.headers.host || '';
+  if (allowedHosts.some(allowedHost => host.includes(allowedHost))) {
+    next();
+  } else {
+    console.error(`Invalid host header: ${host}`);
+    res.status(403).send('Invalid host header');
+  }
+});
+
 // Allow requests from frontend
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'https://sagradago.onrender.com', 'https://sagradago.online', 'http://sagradago.online'],
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://sagradago.onrender.com',
+    'https://sagradago.online',
+    'http://sagradago.online',
+    'https://www.sagradago.online'
+  ],
   methods: ['GET', 'POST'],
-  credentials: true
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 
 // Parse JSON request bodies
