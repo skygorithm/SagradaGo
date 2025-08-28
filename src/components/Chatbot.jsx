@@ -44,11 +44,11 @@ const Chatbot = () => {
       // Local server exposes endpoints under /api
       return 'http://localhost:5001';
     }
-    // In production, rely on same-origin /api which Netlify redirects to the function
-    return '/api';
+    // In production, use the render.com backend URL
+    return 'https://sagradago-backend.onrender.com';
   };
-  const API_GEMINI_URL = getApiBaseUrl() + '/gemini';
-  const API_HEALTH_URL = getApiBaseUrl() + '/health';
+  const API_GEMINI_URL = getApiBaseUrl() + '/api/gemini';
+  const API_HEALTH_URL = getApiBaseUrl() + '/api/health';
   /**
    * Sends a message to the Gemini API and handles the response
    * @param {string} message - The message to send
