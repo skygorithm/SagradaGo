@@ -35,7 +35,10 @@ const ALLOWED_ORIGINS = new Set([
 
 const corsOptions = {
   origin: function(origin, callback) {
+    console.log('CORS check - Origin:', origin);
+    console.log('CORS check - Allowed origins:', Array.from(ALLOWED_ORIGINS));
     if (!origin || ALLOWED_ORIGINS.has(origin)) {
+      console.log('CORS check - Origin allowed:', origin || 'null origin');
       callback(null, true);
     } else {
       console.error('CORS blocked origin:', origin);
@@ -68,6 +71,9 @@ app.use(express.json());
 // Log all incoming requests
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log(`Host header: ${req.headers.host}`);
+  console.log(`Origin header: ${req.headers.origin}`);
+  console.log(`User-Agent: ${req.headers['user-agent']}`);
 
   // Log memory usage
   const memUsage = process.memoryUsage();
