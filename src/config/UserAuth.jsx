@@ -147,25 +147,62 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
       if (authError) throw authError;
 
       if (authData?.user) {
-        // 2. Store additional user data in the user_tbl
-        const { error: profileError } = await supabase
+        // 2. Check if user already exists in user_tbl
+        const { data: existingUser } = await supabase
           .from('user_tbl')
-          .insert([{
-            id: authData.user.id,
-            user_firstname: signupData.user_firstname,
-            user_middle: signupData.user_middle,
-            user_lastname: signupData.user_lastname,
-            user_gender: signupData.user_gender,
-            user_status: signupData.user_status,
-            user_mobile: signupData.user_mobile,
-            user_bday: signupData.user_bday.toISOString().split('T')[0],
-            user_email: signupData.user_email,
-          }]);
+          .select('id')
+          .eq('user_email', signupData.user_email)
+          .single();
 
-        if (profileError) throw profileError;
+        if (existingUser) {
+          throw new Error('An account with this email already exists.');
+        }
 
-        setVerificationEmail(signupData.user_email);
-        setShowVerificationMessage(true);
+        // 3. Store additional user data in the user_tbl with timeout and retry
+        const storeUserData = async (retries = 3) => {
+          try {
+            const { error: profileError } = await Promise.race([
+              supabase
+                .from('user_tbl')
+                .insert([{
+                  id: authData.user.id,
+                  user_firstname: signupData.user_firstname,
+                  user_middle: signupData.user_middle,
+                  user_lastname: signupData.user_lastname,
+                  user_gender: signupData.user_gender,
+                  user_status: signupData.user_status,
+                  user_mobile: signupData.user_mobile,
+                  user_bday: signupData.user_bday.toISOString().split('T')[0],
+                  user_email: signupData.user_email,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                  is_verified: false
+                }]),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timeout')), 10000)
+              )
+            ]);
+
+            if (profileError) {
+              if (profileError.code === '23505') { // Unique violation
+                throw new Error('An account with this email already exists.');
+              }
+              throw profileError;
+            }
+
+            setVerificationEmail(signupData.user_email);
+            setShowVerificationMessage(true);
+          } catch (error) {
+            if (error.message === 'Request timeout' && retries > 0) {
+              console.log(`Retrying... ${retries} attempts left`);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              return storeUserData(retries - 1);
+            }
+            throw error;
+          }
+        };
+
+        await storeUserData();
       }
     } catch (error) {
       console.error('Error during signup:', error);
