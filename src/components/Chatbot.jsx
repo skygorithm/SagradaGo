@@ -40,7 +40,8 @@ const Chatbot = () => {
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
     
     if (isLocalhost) {
-      return 'http://localhost:5001';
+      console.log('Using production API endpoint in Chatbot: https://sagradago.onrender.com');
+      return 'https://sagradago.onrender.com';
     }
     
     return apiUrl;

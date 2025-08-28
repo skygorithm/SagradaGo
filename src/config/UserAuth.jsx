@@ -124,13 +124,15 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
     
     setLoading(true);
     setError('');
-
+    console.log("Signup payload:", { email: signupData.user_email, password: signupData.password });
+    
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: signupData.user_email,
         password: signupData.password,
       });
 
+      console.log("Signup response:", { authData, authError });
       if (authError) throw authError;
 
       if (authData?.user) {
@@ -156,6 +158,22 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
 
         const storeUserData = async (retries = 3) => {
           try {
+            console.log("User table insert payload:", {
+              id: authData.user.id,
+              user_firstname: signupData.user_firstname,
+              user_middle: signupData.user_middle,
+              user_lastname: signupData.user_lastname,
+              user_gender: signupData.user_gender,
+              user_status: signupData.user_status,
+              user_mobile: signupData.user_mobile,
+              user_bday: signupData.user_bday instanceof Date ? signupData.user_bday.toISOString().split('T')[0] : new Date(signupData.user_bday).toISOString().split('T')[0],
+              user_email: signupData.user_email,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              is_verified: false,
+              email_confirmed_at: null,
+              registration_status: 'pending_verification'
+            });
             const { error: profileError } = await Promise.race([
               supabase
                 .from('user_tbl')
