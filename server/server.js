@@ -29,8 +29,7 @@ const ALLOWED_ORIGINS = new Set([
   'https://sagradago.onrender.com',
   'https://sagradago.online',
   'https://www.sagradago.online',
-  'https://sagradago.netlify.app',
-  'https://sagradago-backend.onrender.com'
+  'https://sagradago.netlify.app'
 ]);
 
 const corsOptions = {

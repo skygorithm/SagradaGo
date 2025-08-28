@@ -35,7 +35,7 @@ const Chatbot = () => {
   // Resolve API base URL depending on environment (local dev uses server port, prod uses configured URL)
   const getApiBaseUrl = () => {
     // Use environment variable for API URL
-    const apiUrl = process.env.REACT_APP_API_URL || 'https://sagradago-backend.onrender.com';
+    const apiUrl = process.env.REACT_APP_API_URL || 'https://sagradago.onrender.com';
     const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
 
