@@ -4,7 +4,7 @@ services:
     name: sagradago-backend
     env: node
     rootDir: server
-    buildCommand: npm install
+    buildCommand: npm ci
     startCommand: node server.js
     envVars:
       - key: PORT

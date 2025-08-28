@@ -36,22 +36,36 @@ const ALLOWED_ORIGINS = new Set([
 const corsOptions = {
   origin: function(origin, callback) {
     const isProduction = process.env.NODE_ENV === 'production';
+    
+    console.log('🌐 [CORS CHECK] Processing request:');
+    console.log(`  Origin: ${origin || 'null/undefined'}`);
+    console.log(`  Environment: ${isProduction ? 'production' : 'development'}`);
+    console.log(`  Allowed origins: ${Array.from(ALLOWED_ORIGINS).join(', ')}`);
 
-    // Only log CORS issues in production, or all in development
-    if (!origin || ALLOWED_ORIGINS.has(origin)) {
-      if (!isProduction && origin) {
-        console.log('CORS check - Origin allowed:', origin);
-      }
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) {
+      console.log('🌐 [CORS CHECK] ✅ No origin header - allowing (mobile app, curl, etc.)');
+      callback(null, true);
+      return;
+    }
+    
+    if (ALLOWED_ORIGINS.has(origin)) {
+      console.log('🌐 [CORS CHECK] ✅ Origin allowed:', origin);
       callback(null, true);
     } else {
-      if (isProduction) {
-        console.error('CORS blocked origin:', origin);
+      console.log('🌐 [CORS CHECK] ❌ Origin blocked:', origin);
+      console.log('🌐 [CORS CHECK] Available allowed origins:');
+      Array.from(ALLOWED_ORIGINS).forEach((allowedOrigin, index) => {
+        console.log(`  ${index + 1}. ${allowedOrigin}`);
+      });
+      
+      // In development, be more permissive for testing
+      if (!isProduction) {
+        console.log('🌐 [CORS CHECK] ⚠️  Development mode - allowing blocked origin for testing');
+        callback(null, true);
       } else {
-        console.log('CORS check - Origin:', origin);
-        console.log('CORS check - Allowed origins:', Array.from(ALLOWED_ORIGINS));
-        console.log('CORS check - Origin blocked:', origin || 'null origin');
+        callback(new Error(`Origin ${origin} not allowed by CORS`));
       }
-      callback(new Error(`Origin ${origin} not allowed by CORS`));
     }
   },
   credentials: true,
@@ -121,12 +135,25 @@ app.use('/api', (req, res, next) => {
 });
 */
 
-// Add diagnostic logging for API requests
+// Add enhanced diagnostic logging for API requests
 app.use('/api', (req, res, next) => {
-  console.log(`[API REQUEST] ${req.method} ${req.originalUrl}`);
-  console.log(`[API REQUEST] Host: ${req.headers.host}`);
-  console.log(`[API REQUEST] Origin: ${req.headers.origin}`);
-  console.log(`[API REQUEST] User-Agent: ${req.headers['user-agent']}`);
+  console.log('🔗 [API REQUEST] Incoming request:');
+  console.log(`  Method: ${req.method}`);
+  console.log(`  URL: ${req.originalUrl}`);
+  console.log(`  Full URL: ${req.protocol}://${req.headers.host}${req.originalUrl}`);
+  console.log(`  Host: ${req.headers.host}`);
+  console.log(`  Origin: ${req.headers.origin || 'Not provided'}`);
+  console.log(`  Referer: ${req.headers.referer || 'Not provided'}`);
+  console.log(`  User-Agent: ${req.headers['user-agent'] || 'Not provided'}`);
+  console.log(`  Content-Type: ${req.headers['content-type'] || 'Not provided'}`);
+  
+  // Log if this looks like a CORS preflight
+  if (req.method === 'OPTIONS') {
+    console.log('🔗 [API REQUEST] ⚠️  CORS Preflight detected');
+    console.log(`  Access-Control-Request-Method: ${req.headers['access-control-request-method'] || 'Not provided'}`);
+    console.log(`  Access-Control-Request-Headers: ${req.headers['access-control-request-headers'] || 'Not provided'}`);
+  }
+  
   next();
 });
 
@@ -256,18 +283,32 @@ app.post('/api/gemini', async (req, res) => {
  * GET /api/health
  */
 app.get('/api/health', async (req, res) => {
-  console.log('[HEALTH CHECK] Request received');
-  console.log('[HEALTH CHECK] Environment variables:');
+  console.log('🏥 [HEALTH CHECK] Request received');
+  console.log('🏥 [HEALTH CHECK] Request details:');
+  console.log('  - Host header:', req.headers.host);
+  console.log('  - Origin header:', req.headers.origin || 'Not provided');
+  console.log('  - User-Agent:', req.headers['user-agent'] || 'Not provided');
+  console.log('  - Protocol:', req.protocol);
+  console.log('  - URL:', req.url);
+  console.log('  - Method:', req.method);
+  
+  console.log('🏥 [HEALTH CHECK] Environment variables:');
   console.log('  - GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'Configured' : 'NOT CONFIGURED');
   console.log('  - REACT_APP_SUPABASE_URL:', process.env.REACT_APP_SUPABASE_URL ? 'Configured' : 'NOT CONFIGURED');
   console.log('  - REACT_SUPABASE_SERVICE_ROLE_KEY:', process.env.REACT_SUPABASE_SERVICE_ROLE_KEY ? 'Configured' : 'NOT CONFIGURED');
   console.log('  - NODE_ENV:', process.env.NODE_ENV || 'development');
   console.log('  - PORT:', process.env.PORT || 5001);
 
+  // Test API connectivity
+  console.log('🏥 [HEALTH CHECK] Testing Gemini API connectivity...');
   const apiTest = await testGeminiAPI().catch((error) => {
-    console.error('[HEALTH CHECK] API test failed:', error.message);
+    console.error('🏥 [HEALTH CHECK] ❌ API test failed:', error.message);
     return false;
   });
+
+  if (apiTest) {
+    console.log('🏥 [HEALTH CHECK] ✅ Gemini API test successful');
+  }
 
   const response = {
     status: 'ok',
@@ -278,10 +319,18 @@ app.get('/api/health', async (req, res) => {
     apiTestSuccessful: apiTest,
     environment: process.env.NODE_ENV || 'development',
     serverHost: req.headers.host,
-    serverUrl: `${req.protocol}://${req.headers.host}`
+    serverUrl: `${req.protocol}://${req.headers.host}`,
+    // Add diagnostic info
+    diagnostics: {
+      corsOrigins: Array.from(ALLOWED_ORIGINS),
+      memoryUsage: Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB',
+      uptime: Math.round(process.uptime()) + 's',
+      nodeVersion: process.version,
+      platform: process.platform
+    }
   };
 
-  console.log('[HEALTH CHECK] Response:', JSON.stringify(response, null, 2));
+  console.log('🏥 [HEALTH CHECK] Response prepared:', JSON.stringify(response, null, 2));
   res.json(response);
 });
 
@@ -415,12 +464,37 @@ process.on('uncaughtException', (error) => {
 
 const startServer = async () => {
   try {
+    console.log('='.repeat(60));
+    console.log('🔍 DIAGNOSTIC: Starting server validation...');
+    console.log('='.repeat(60));
+    
+    // Log all environment variables for debugging
+    console.log('📋 DIAGNOSTIC: Environment Variables Check:');
+    console.log('  NODE_ENV:', process.env.NODE_ENV || 'undefined');
+    console.log('  PORT:', process.env.PORT || 'undefined');
+    console.log('  GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? '✅ SET (length: ' + process.env.GEMINI_API_KEY.length + ')' : '❌ MISSING');
+    console.log('  REACT_APP_SUPABASE_URL:', process.env.REACT_APP_SUPABASE_URL ? '✅ SET' : '❌ MISSING');
+    console.log('  REACT_SUPABASE_SERVICE_ROLE_KEY:', process.env.REACT_SUPABASE_SERVICE_ROLE_KEY ? '✅ SET (length: ' + process.env.REACT_SUPABASE_SERVICE_ROLE_KEY.length + ')' : '❌ MISSING');
+    
+    // Log process information
+    console.log('🖥️  DIAGNOSTIC: Process Information:');
+    console.log('  Node Version:', process.version);
+    console.log('  Platform:', process.platform);
+    console.log('  Architecture:', process.arch);
+    console.log('  Memory Usage:', Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB');
+    console.log('  Working Directory:', process.cwd());
+    
     // Validate required environment variables
     const requiredEnvVars = ['GEMINI_API_KEY', 'REACT_APP_SUPABASE_URL', 'REACT_SUPABASE_SERVICE_ROLE_KEY'];
     const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
+    console.log('🔐 DIAGNOSTIC: Environment Variables Validation:');
     if (missingEnvVars.length > 0) {
+      console.error('❌ CRITICAL ERROR: Missing required environment variables:', missingEnvVars.join(', '));
+      console.error('🚨 This will cause deployment failure on Render');
       throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+    } else {
+      console.log('✅ All required environment variables are present');
     }
 
     // Start server
