@@ -34,6 +34,13 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: build
     routes:
+- type: redirect
+      source: /*
+      destination: https://sagradago.onrender.com/
+      status: 301
+      conditions:
+        - header: Host
+          value: sagradago\.online
       # Serve static files first
       - type: rewrite
         source: /static/*
