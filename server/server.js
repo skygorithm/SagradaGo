@@ -35,13 +35,22 @@ const ALLOWED_ORIGINS = new Set([
 
 const corsOptions = {
   origin: function(origin, callback) {
-    console.log('CORS check - Origin:', origin);
-    console.log('CORS check - Allowed origins:', Array.from(ALLOWED_ORIGINS));
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    // Only log CORS issues in production, or all in development
     if (!origin || ALLOWED_ORIGINS.has(origin)) {
-      console.log('CORS check - Origin allowed:', origin || 'null origin');
+      if (!isProduction && origin) {
+        console.log('CORS check - Origin allowed:', origin);
+      }
       callback(null, true);
     } else {
-      console.error('CORS blocked origin:', origin);
+      if (isProduction) {
+        console.error('CORS blocked origin:', origin);
+      } else {
+        console.log('CORS check - Origin:', origin);
+        console.log('CORS check - Allowed origins:', Array.from(ALLOWED_ORIGINS));
+        console.log('CORS check - Origin blocked:', origin || 'null origin');
+      }
       callback(new Error(`Origin ${origin} not allowed by CORS`));
     }
   },
@@ -68,25 +77,36 @@ app.use((req, res, next) => {
 // Parse JSON request bodies
 app.use(express.json());
 
-// Log all incoming requests
+// Log all incoming requests (optimized for production)
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  console.log(`Host header: ${req.headers.host}`);
-  console.log(`Origin header: ${req.headers.origin}`);
-  console.log(`User-Agent: ${req.headers['user-agent']}`);
+  const isProduction = process.env.NODE_ENV === 'production';
 
-  // Log memory usage
-  const memUsage = process.memoryUsage();
-  console.log(`Memory Usage - RSS: ${(memUsage.rss / 1024 / 1024).toFixed(2)}MB, Heap Used: ${(memUsage.heapUsed / 1024 / 1024).toFixed(2)}MB, Heap Total: ${(memUsage.heapTotal / 1024 / 1024).toFixed(2)}MB`);
+  // In production, only log errors and important requests
+  if (isProduction) {
+    // Only log API requests and potential issues
+    if (req.url.startsWith('/api/') || req.method !== 'GET') {
+      console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    }
+  } else {
+    // Development: keep detailed logging
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    console.log(`Host header: ${req.headers.host}`);
+    console.log(`Origin header: ${req.headers.origin}`);
+    console.log(`User-Agent: ${req.headers['user-agent']}`);
 
-  if (req.method === 'POST') {
-    const bodySize = JSON.stringify(req.body).length;
-    console.log(`Request body size: ${(bodySize / 1024).toFixed(2)}KB`);
-    // Only log body if it's not too large to prevent memory issues
-    if (bodySize < 10000) { // 10KB limit
-      console.log('Request body:', JSON.stringify(req.body, null, 2));
-    } else {
-      console.log('Request body too large to log (size > 10KB)');
+    // Log memory usage in development
+    const memUsage = process.memoryUsage();
+    console.log(`Memory Usage - RSS: ${(memUsage.rss / 1024 / 1024).toFixed(2)}MB, Heap Used: ${(memUsage.heapUsed / 1024 / 1024).toFixed(2)}MB, Heap Total: ${(memUsage.heapTotal / 1024 / 1024).toFixed(2)}MB`);
+
+    if (req.method === 'POST') {
+      const bodySize = JSON.stringify(req.body).length;
+      console.log(`Request body size: ${(bodySize / 1024).toFixed(2)}KB`);
+      // Only log body if it's not too large to prevent memory issues
+      if (bodySize < 10000) { // 10KB limit
+        console.log('Request body:', JSON.stringify(req.body, null, 2));
+      } else {
+        console.log('Request body too large to log (size > 10KB)');
+      }
     }
   }
   next();
@@ -398,7 +418,7 @@ const startServer = async () => {
     // Validate required environment variables
     const requiredEnvVars = ['GEMINI_API_KEY', 'REACT_APP_SUPABASE_URL', 'REACT_SUPABASE_SERVICE_ROLE_KEY'];
     const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
-    
+
     if (missingEnvVars.length > 0) {
       throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
     }
@@ -410,24 +430,30 @@ const startServer = async () => {
       console.log(`Server running on port ${port}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`Health check: http://localhost:${port}/api/health`);
-      
-      try {
-        // Test API on startup with timeout
-        const apiTest = await Promise.race([
-          testGeminiAPI(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('API test timeout')), 5000))
-        ]);
 
-        if (!apiTest) {
-          console.error('⚠️ Warning: Gemini API test failed. The chatbot may not work properly.');
-          console.error('Please check your API key and try again.');
-        } else {
-          console.log('✅ Gemini API test successful');
+      // Skip API test in production to speed up startup
+      const isProduction = process.env.NODE_ENV === 'production';
+      if (!isProduction) {
+        try {
+          // Test API on startup with timeout
+          const apiTest = await Promise.race([
+            testGeminiAPI(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('API test timeout')), 5000))
+          ]);
+
+          if (!apiTest) {
+            console.error('⚠️ Warning: Gemini API test failed. The chatbot may not work properly.');
+            console.error('Please check your API key and try again.');
+          } else {
+            console.log('✅ Gemini API test successful');
+          }
+        } catch (error) {
+          console.error('⚠️ Error testing Gemini API:', error.message);
         }
-      } catch (error) {
-        console.error('⚠️ Error testing Gemini API:', error.message);
+      } else {
+        console.log('ℹ️ Production mode: Skipping startup API test for faster deployment');
       }
-      
+
       console.log('='.repeat(50));
     });
 
