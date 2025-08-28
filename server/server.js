@@ -30,7 +30,9 @@ const corsOptions = {
       'http://localhost:5173',
       'https://sagradago.onrender.com',
       'https://sagradago.online',
-      'https://www.sagradago.online'
+      'https://www.sagradago.online',
+      'https://sagradago.netlify.app',
+      'https://sagradago-backend.onrender.com'
     ];
     
     if (!origin || allowedOrigins.includes(origin)) {
@@ -41,8 +43,9 @@ const corsOptions = {
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
   optionsSuccessStatus: 200,
   maxAge: 86400 // 24 hours
 };

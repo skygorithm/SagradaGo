@@ -15,7 +15,37 @@ import {
   Radio,
   FormLabel,
   Typography,
-} from '@mui/material';
+} fr      if (authData?.user) {
+        try {
+          // 2. Check if email is verified
+          if (!authData.user.email_confirmed_at) {
+            setVerificationEmail(loginEmail);
+            setShowVerificationMessage(true);
+            await supabase.auth.signOut();
+            setLoading(false);
+            return;
+          }
+
+          // Update user verification status if not already done
+          const { data: verificationCheck } = await supabase
+            .from('user_tbl')
+            .select('*')
+            .eq('id', authData.user.id)
+            .single();
+
+          if (verificationCheck && !verificationCheck.email_confirmed_at) {
+            await supabase
+              .from('user_tbl')
+              .update({
+                is_verified: true,
+                email_confirmed_at: authData.user.email_confirmed_at,
+                registration_status: 'verified',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', authData.user.id);
+          }
+
+          // 3. Get user profile data from user_tblterial';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -147,15 +177,27 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
       if (authError) throw authError;
 
       if (authData?.user) {
-        // 2. Check if user already exists in user_tbl
-        const { data: existingUser } = await supabase
+        // 2. Check if user already exists and is verified
+        const { data: existingUsers, error: queryError } = await supabase
           .from('user_tbl')
-          .select('id')
-          .eq('user_email', signupData.user_email)
-          .single();
+          .select('id, is_verified, email_confirmed_at')
+          .eq('user_email', signupData.user_email);
 
-        if (existingUser) {
-          throw new Error('An account with this email already exists.');
+        if (queryError) throw queryError;
+
+        if (existingUsers && existingUsers.length > 0) {
+          const existingUser = existingUsers[0];
+          
+          // If user exists but hasn't verified their email
+          if (!existingUser.email_confirmed_at) {
+            // Delete the old unverified user data
+            await supabase
+              .from('user_tbl')
+              .delete()
+              .eq('id', existingUser.id);
+          } else {
+            throw new Error('An account with this email already exists and is verified.');
+          }
         }
 
         // 3. Store additional user data in the user_tbl with timeout and retry
@@ -176,7 +218,9 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
                   user_email: signupData.user_email,
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString(),
-                  is_verified: false
+                  is_verified: false,
+                  email_confirmed_at: null,
+                  registration_status: 'pending_verification'
                 }]),
               new Promise((_, reject) => 
                 setTimeout(() => reject(new Error('Request timeout')), 10000)
@@ -248,6 +292,24 @@ const LoginModal = ({ onClose, onLoginSuccess, isSignupMode }) => {
           setLoading(false);
           return;
         }
+
+        // Update user verification status if not already done
+        const { data: userData, error: userError } = await supabase
+          .from('user_tbl')
+          .select('*')
+          .eq('id', authData.user.id)
+          .single();
+
+        if (!userError && userData && !userData.email_confirmed_at) {
+          await supabase
+            .from('user_tbl')
+            .update({
+              is_verified: true,
+              email_confirmed_at: authData.user.email_confirmed_at,
+              registration_status: 'verified',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', authData.user.id);
 
         // 3. Get user profile data from user_tbl
         const { data: userData, error: userError } = await supabase

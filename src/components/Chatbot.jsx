@@ -34,18 +34,16 @@ const Chatbot = () => {
   // ===== Message Handling =====
   // Resolve API base URL depending on environment (local dev uses server port, prod uses Netlify redirect)
   const getApiBaseUrl = () => {
-    const configuredUrl = process.env.REACT_APP_API_BASE_URL;
-    if (configuredUrl) {
-      return configuredUrl.replace(/\/$/, '');
-    }
+    // Use environment variable for API URL
+    const apiUrl = process.env.REACT_APP_API_URL || 'https://sagradago-backend.onrender.com';
     const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    
     if (isLocalhost) {
-      // Local server exposes endpoints under /api
       return 'http://localhost:5001';
     }
-    // In production, use the render.com backend URL
-    return 'https://sagradago.onrender.com';
+    
+    return apiUrl;
   };
   const API_GEMINI_URL = getApiBaseUrl() + '/gemini';
   const API_HEALTH_URL = getApiBaseUrl() + '/health';
