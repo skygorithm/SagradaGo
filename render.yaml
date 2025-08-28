@@ -41,7 +41,7 @@ services:
       # API rewrite rule
       - type: rewrite
         source: /api/:path*
-        destination: http://sagradago-backend:5001/api/:path*
+        destination: https://sagradago.onrender.com/api/:path*
       # Handle client-side routing
       - type: rewrite
         source: /*
