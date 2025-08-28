@@ -214,8 +214,61 @@ app.post('/admin/createUser', async (req, res) => {
       });
     }
 
+    // Check if user exists and their verification status
+    const { data: existingUser, error: userError } = await supabase
+      .from('user_tbl')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (userError && userError.code !== 'PGRST116') { // PGRST116 is "not found" error
+      console.error('Error checking existing user:', userError);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Error checking user status',
+        details: userError,
+        user: null
+      });
+    }
+
+    // Check if user exists in auth
+    const { data: authUser, error: authError } = await supabase.auth.admin.listUsers();
+    const existingAuthUser = authUser?.users?.find(u => u.email === email);
+
+    if (existingUser || existingAuthUser) {
+      const status = {
+        isRegistered: !!existingUser,
+        isVerified: existingUser?.is_verified || false,
+        hasAuthAccount: !!existingAuthUser
+      };
+
+      // Different error messages based on user status
+      if (status.isRegistered && status.isVerified) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'User already exists and is verified',
+          details: 'This email is already registered and verified in the system.',
+          user: null
+        });
+      } else if (status.isRegistered && !status.isVerified) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'User exists but is not verified',
+          details: 'This email is registered but pending verification. Please check your email for the verification link.',
+          user: null
+        });
+      } else {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Invalid user state',
+          details: 'User account is in an invalid state. Please contact support.',
+          user: null
+        });
+      }
+    }
+
+    // Create the auth user and send invitation
     const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-      // redirectTo: `http://localhost:3000/set-password`,
       redirectTo: `https://sagradago.online/set-password`,
     });
 
@@ -223,20 +276,54 @@ app.post('/admin/createUser', async (req, res) => {
       console.error('Error from Supabase:', error);
       return res.status(500).json({
         status: 'error',
-        message: error,
+        message: error.message,
         details: error,
         user: null
       });
     }
 
-    res.json({
-      status: 'success',
-      message: 'User has been invited to join SagradaGo. They are sent an invite link to set their password before accessing the system.',
-      details: 'User has been invited to join SagradaGo',
-      user: data.user
-    });
+    try {
+      // Create user record in user_tbl with the same ID
+      const { error: userError } = await supabase
+        .from('user_tbl')
+        .insert([
+          {
+            id: data.user.id,
+            email: email,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            user_type: 'client',
+            is_verified: false,
+            registration_status: 'pending', // Track registration status
+            verification_sent_at: new Date().toISOString(),
+            last_login: null
+          }
+        ]);
 
-    // Create a new user in the SagradaGo system
+      if (userError) {
+        console.error('Error creating user record:', userError);
+        // Attempt to clean up the auth user if user_tbl insert fails
+        await supabase.auth.admin.deleteUser(data.user.id);
+        return res.status(500).json({
+          status: 'error',
+          message: 'Failed to create user record',
+          details: userError,
+          user: null
+        });
+      }
+
+      res.json({
+        status: 'success',
+        message: 'User has been invited to join SagradaGo. They are sent an invite link to set their password before accessing the system.',
+        details: 'User has been created and invited to join SagradaGo',
+        user: data.user
+      });
+    } catch (insertError) {
+      console.error('Error in user creation:', insertError);
+      // Attempt to clean up the auth user if something goes wrong
+      await supabase.auth.admin.deleteUser(data.user.id);
+      throw insertError;
+    }
 
   } catch (error) {
     console.error('Error creating user:', error);
