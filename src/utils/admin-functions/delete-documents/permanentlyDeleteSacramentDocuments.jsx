@@ -86,7 +86,7 @@ const permanentlyDeleteSacramentDocuments = async ({
                     console.log("Delete response data:", deleteData);
 
                     // Verify deletion by trying to download
-                    const { data: verifyData, error: verifyError } = await supabase.storage
+                    const { error: verifyError } = await supabase.storage
                         .from(bucketName || 'booking-documents')
                         .download(filePath);
                     
@@ -132,13 +132,13 @@ const extractFilePathFromUrl = (url) => {
     // const index = url.indexOf(targetPath);
     // const fullPath = decodeURIComponent(url.substring(index));
     // return fullPath;
-    const match = url.match(/\/storage\/v1\/object\/public\/[^\/]+\/(.+)$/);
+    const match = url.match(/\/storage\/v1\/object\/public\/[^/]+\/(.+)$/);
     return match ? decodeURIComponent(match[1]) : null;
 };
 // function to extract bucket name from Supabase storage URL
 const extractBucketFromUrl = (url) => {
     // URL format: https://project.supabase.co/storage/v1/object/public/bucket-name/path/to/file
-    const match = url.match(/\/storage\/v1\/object\/public\/([^\/]+)/);
+    const match = url.match(/\/storage\/v1\/object\/public\/([^/]+)/);
     return match ? match[1] : null;
 };
 

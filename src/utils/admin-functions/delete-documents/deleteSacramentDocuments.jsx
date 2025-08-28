@@ -23,7 +23,7 @@ const deleteSacramentDocuments = async ({table, sacrament, specificId, adminData
     console.log(`${sacrament} document to delete:`, specificInsertData);
     
     // Insert the document into deleted_records
-    const { data: insertData, error: docError } = await supabase
+    const { error: docError } = await supabase
     .from('deleted_records')
     .insert([{
         original_table: table,

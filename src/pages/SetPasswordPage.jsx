@@ -11,39 +11,28 @@ const SetPasswordPage = () => {
   const location = useLocation();
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
-  const [user, setUser] = useState(null);
-  const [isValidAccess, setIsValidAccess] = useState(false);
-
-
   useEffect(() => {
     async function validateAccess() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (!session || !session.user) {
+        if (!session?.user) {
           console.log('No session found, redirecting to login');
           navigate('/');
           return;
         }
 
-        const user = session.user;
-        setUser(user);
-
         // Check if this is a password recovery session
-        const isPasswordRecovery = session.user.recovery_sent_at || 
+        const isPasswordRecovery = session.user.recovery_sent_at ||
                                  location.search.includes('type=recovery') ||
                                  location.hash.includes('type=recovery');
 
         // Check if user has never set a password (admin created account)
-        // This checks if user was created recently and hasn't logged in before
-        const isNewAccount = !user.last_sign_in_at || 
-                           (user.created_at && user.last_sign_in_at && 
-                            new Date(user.created_at).getTime() === new Date(user.last_sign_in_at).getTime());
+        const isNewAccount = !session.user.last_sign_in_at ||
+                           (session.user.created_at && session.user.last_sign_in_at &&
+                            new Date(session.user.created_at).getTime() === new Date(session.user.last_sign_in_at).getTime());
 
-        if (isPasswordRecovery || isNewAccount) {
-          console.log('Valid access - password recovery or new account');
-          setIsValidAccess(true);
-        } else {
+        if (!isPasswordRecovery && !isNewAccount) {
           console.log('Invalid access - user already has established account');
           setError('You already have access to your account. Use the regular login page.');
           setTimeout(() => {
