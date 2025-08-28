@@ -15,17 +15,22 @@ services:
       - key: REACT_SUPABASE_SERVICE_ROLE_KEY
         value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpianF4eGZhb3J4dGl0dm1wb3RwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0Nzc0NTI4OSwiZXhwIjoyMDYzMzIxMjg5fQ.hnqcbF1neIvCtmvprBAob15aWLlfyUQ9MRIX03rQgzs
       - key: REACT_APP_SUPABASE_URL
-        value: https://jbjqxxfaorxtitvmpotp.supabase.co/
+        value: https://jbjqxxfaorxtitvmpotp.supabase.co
+      - key: REACT_APP_SUPABASE_ANON_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpianF4eGZhb3J4dGl0dm1wb3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NDUyODksImV4cCI6MjA2MzMyMTI4OX0.9jUHGZKbpZymm0f5UTngBdx5e90Xo5cNyVTGe9VQoNs
     headers:
       - path: /*
         name: Access-Control-Allow-Origin
         value: https://sagradago.online
       - path: /*
         name: Access-Control-Allow-Methods
-        value: GET, POST, OPTIONS
+        value: GET, POST, PUT, DELETE, OPTIONS
       - path: /*
         name: Access-Control-Allow-Headers
-        value: Content-Type, Authorization
+        value: Content-Type, Authorization, X-Requested-With
+      - path: /*
+        name: Access-Control-Allow-Credentials
+        value: true
 
   # Frontend service
   - type: web
@@ -41,7 +46,7 @@ services:
       # API rewrite rule - Updated to match CORS configuration
       - type: rewrite
         source: /api/:path*
-        destination: https://sagradago.onrender.com/api/:path*
+        destination: https://sagradago-backend.onrender.com/api/:path*
       # Handle client-side routing
       - type: rewrite
         source: /*
