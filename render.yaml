@@ -38,10 +38,10 @@ services:
       - type: rewrite
         source: /static/*
         destination: /static/*
-      # API rewrite rule
+      # API rewrite rule - Updated to match CORS configuration
       - type: rewrite
         source: /api/:path*
-        destination: https://sagradago-backend.onrender.com/api/:path*
+        destination: https://sagradago.onrender.com/api/:path*
       # Handle client-side routing
       - type: rewrite
         source: /*

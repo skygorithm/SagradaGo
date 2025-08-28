@@ -91,10 +91,23 @@ app.use((req, res, next) => {
   }
   next();
 });
+// TEMPORARILY DISABLE API REDIRECT FOR DEBUGGING
+// This redirect was causing infinite loops
+/*
 app.use('/api', (req, res, next) => {
   const target = `https://sagradago.onrender.com${req.originalUrl}`;
   console.log(`Redirecting API request to ${target}`);
   res.redirect(307, target);
+});
+*/
+
+// Add diagnostic logging for API requests
+app.use('/api', (req, res, next) => {
+  console.log(`[API REQUEST] ${req.method} ${req.originalUrl}`);
+  console.log(`[API REQUEST] Host: ${req.headers.host}`);
+  console.log(`[API REQUEST] Origin: ${req.headers.origin}`);
+  console.log(`[API REQUEST] User-Agent: ${req.headers['user-agent']}`);
+  next();
 });
 
 // ===== Helper Functions =====
@@ -223,14 +236,33 @@ app.post('/api/gemini', async (req, res) => {
  * GET /api/health
  */
 app.get('/api/health', async (req, res) => {
-  const apiTest = await testGeminiAPI().catch(() => false);
-  res.json({
+  console.log('[HEALTH CHECK] Request received');
+  console.log('[HEALTH CHECK] Environment variables:');
+  console.log('  - GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'Configured' : 'NOT CONFIGURED');
+  console.log('  - REACT_APP_SUPABASE_URL:', process.env.REACT_APP_SUPABASE_URL ? 'Configured' : 'NOT CONFIGURED');
+  console.log('  - REACT_SUPABASE_SERVICE_ROLE_KEY:', process.env.REACT_SUPABASE_SERVICE_ROLE_KEY ? 'Configured' : 'NOT CONFIGURED');
+  console.log('  - NODE_ENV:', process.env.NODE_ENV || 'development');
+  console.log('  - PORT:', process.env.PORT || 5001);
+
+  const apiTest = await testGeminiAPI().catch((error) => {
+    console.error('[HEALTH CHECK] API test failed:', error.message);
+    return false;
+  });
+
+  const response = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     apiKeyConfigured: !!process.env.GEMINI_API_KEY,
+    supabaseUrlConfigured: !!process.env.REACT_APP_SUPABASE_URL,
+    supabaseServiceKeyConfigured: !!process.env.REACT_SUPABASE_SERVICE_ROLE_KEY,
     apiTestSuccessful: apiTest,
-    environment: process.env.NODE_ENV || 'development'
-  });
+    environment: process.env.NODE_ENV || 'development',
+    serverHost: req.headers.host,
+    serverUrl: `${req.protocol}://${req.headers.host}`
+  };
+
+  console.log('[HEALTH CHECK] Response:', JSON.stringify(response, null, 2));
+  res.json(response);
 });
 
 // User creation endpoint
