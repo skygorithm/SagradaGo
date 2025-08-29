@@ -13,10 +13,9 @@ import {
   CircularProgress
 } from '@mui/material';
 
-// Default admin credentials (these would normally be in .env)
 const DEFAULT_ADMIN = {
-  email: 'admin@sagradago.com',
-  password: 'Admin123!'
+  email: 'admin@gmail.com',
+  password: 'admin'
 };
 
 const AdminLogin = () => {
@@ -76,37 +75,59 @@ const AdminLogin = () => {
     setError('');
     setLoading(true);
     console.log('Login started:', new Date().toISOString());
-
+  
     try {
-      // Check if admin exists with provided email and password
-      const { data: admin, error: adminError } = await supabase
+      // Check if admin exists with provided email and password in database
+      console.log('Querying admin_tbl with email:', email);
+      const { data: admins, error: adminError } = await supabase
         .from('admin_tbl')
         .select('*')
         .eq('admin_email', email)
         .eq('admin_pword', password)
         .eq('is_deleted', false)
-        .eq('status', 'active')
-        .single();
-
-      console.log('admin check completed:', new Date().toISOString());
-
+        .eq('status', 'active');
+  
+      console.log('admin check result:', admins);
+      console.log('admin check error:', adminError);
+  
       if (adminError) {
         console.error('admin check error:', adminError);
         throw adminError;
       }
-
-      if (!admin) {
+  
+      let admin;
+      let isDefaultAdmin = false;
+  
+      // If admin found in database, use database record
+      if (admins && admins.length > 0) {
+        admin = admins[0];
+        console.log('Database admin found');
+      } 
+      // Fallback to default admin credentials
+      else if (email === DEFAULT_ADMIN.email && password === DEFAULT_ADMIN.password) {
+        admin = {
+          id: 'default-admin',
+          admin_email: DEFAULT_ADMIN.email,
+          admin_firstname: 'Default',
+          admin_lastname: 'Admin'
+        };
+        isDefaultAdmin = true;
+        console.log('Using default admin credentials');
+      } 
+      // No valid credentials found
+      else {
         throw new Error('Invalid email or password');
       }
-
+  
       // Store admin data in localStorage
       const adminData = {
         id: admin.id,
         email: admin.admin_email,
         firstName: admin.admin_firstname,
-        lastName: admin.admin_lastname
+        lastName: admin.admin_lastname,
+        isDefault: isDefaultAdmin
       };
-
+  
       // Call login function from AdminAuthContext
       login(adminData);
       console.log('Login successful:', new Date().toISOString());
@@ -180,4 +201,4 @@ const AdminLogin = () => {
   );
 };
 
-export default AdminLogin; 
+export default AdminLogin;

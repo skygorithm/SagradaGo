@@ -22,37 +22,32 @@ import {
   Alert,
   CircularProgress,
   Grid,
-  IconButton,
-  Tooltip,
   Card,
   CardContent,
   Tabs,
   Tab,
-  TablePagination,
-  InputAdornment,
-  Menu,
-  MenuItem,
-  Checkbox,
-  FormControlLabel,
   Chip,
-  Autocomplete,
-  FormControl,
-  Select,
   Divider,
 } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import HistoryIcon from '@mui/icons-material/History';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
-import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import SaveAltIcon from '@mui/icons-material/SaveAlt';
-import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, XAxis, YAxis, Tooltip as RechartsTooltip } from 'recharts';
 import { ChurchOutlined, TableChart } from '@mui/icons-material';
+
+// Import configurations and utilities
+import {
+  TABLE_STRUCTURES,
+  SACRAMENT_TABLE_STRUCTURES,
+  getSacramentTableKeys,
+  getRegularTableKeys
+} from '../config/tableConfig';
+import TableManager from '../components/common/TableManager';
 import { applyFilters } from '../utils/admin-functions/applyFilters';
-import { handleChangeRowsPerPage, handleColumnClick, handleColumnToggle, handleFilterClick } from '../utils/admin-functions/handleFilterOptions';
+import { handleColumnClick, handleFilterClick } from '../utils/admin-functions/handleFilterOptions';
 import exportToCSV from '../utils/admin-functions/exportToCSV';
 import AdminSacramentDialog from '../components/dialog/AdminSacramentDialog';
 import { handleSacramentSave, handleSave } from '../utils/admin-functions/handleSave';
@@ -72,148 +67,14 @@ import permanentlyDeleteSacramentDocuments from '../utils/admin-functions/delete
 import WeddingSacramentForm from '../components/sacramentFormsSpecific/WeddingSacramentForm';
 
 
-const COMMON_BOOKING_STRUCTURE = {
-  fields: [
-    'user_firstname',
-    'user_lastname', 
-    'booking_status',
-    'booking_date',
-    'booking_time',
-    'booking_pax',
-    'booking_transaction',
-    'price',
-    'paid',
-    'form',
-  ],
-  requiredFields: ['booking_date', 'booking_time', 'booking_pax', 'booking_status', 'user_id']
-};
-
-const BOOKING_TABLE_STRUCTURES = {
-  wedding: {
-    ...COMMON_BOOKING_STRUCTURE,
-    displayName: 'Wedding'
-  },
-  baptism: {
-    ...COMMON_BOOKING_STRUCTURE,
-    displayName: 'Baptism',
-  },
-  confession: {
-    ...COMMON_BOOKING_STRUCTURE,
-    displayName: 'Confession'
-  },
-  anointing: {
-    ...COMMON_BOOKING_STRUCTURE,
-    displayName: 'Anointing'
-  },
-  communion: {
-    ...COMMON_BOOKING_STRUCTURE,
-    displayName: 'First Communion'
-  },
-  burial: {
-    ...COMMON_BOOKING_STRUCTURE,
-    displayName: 'Burial',
-  }
-};
-
-// Define table structures
-const TABLE_STRUCTURES = {
-  booking_tbl: {
-    fields: [
-      // 'user_id',
-      'user_firstname',
-      'user_lastname',
-      'booking_status',
-      'booking_sacrament',
-      'booking_date',
-      'booking_time',
-      'booking_pax',
-      'booking_transaction',
-      'price',
-      'paid',
-    ],
-    displayName: 'All Sacrament Bookings',
-    requiredFields: ['booking_sacrament', 'booking_date', 'booking_time', 'booking_pax', 'booking_status', 'user_id']
-  },
-  document_tbl: {
-    fields: [
-      'firstname',
-      'middle',
-      'lastname',
-      'gender',
-      'mobile',
-      'bday',
-      'marital_status',
-      'baptismal_certificate',
-      'confirmation_certificate',
-      'wedding_certificate'
-    ],
-    displayName: 'Documents',
-    requiredFields: ['firstname', 'lastname']
-  },
-  donation_tbl: {
-    fields: [
-      // 'user_id',
-      'user_firstname',
-      'user_lastname',
-      'donation_amount',
-      'donation_intercession',
-      'date_created',
-    ],
-    displayName: 'Donations',
-    requiredFields: ['donation_amount']
-  },
-  request_tbl: {
-    fields: [
-      // 'user_id',
-      'user_firstname',
-      'user_lastname',
-      'request_baptismcert',
-      'request_confirmationcert',
-      'document_id'
-    ],
-    displayName: 'Requests',
-    requiredFields: ['user_id']
-  },
-  admin_tbl: {
-    fields: [
-      'admin_firstname',
-      'admin_lastname',
-      'admin_email',
-      'admin_mobile',
-      'admin_bday',
-    ],
-    displayName: 'Admins',
-    requiredFields: ['admin_email', 'admin_firstname', 'admin_lastname']
-  },
-  priest_tbl: {
-    fields: [
-      'priest_name',
-      'priest_diocese',
-      'priest_parish',
-      'priest_availability'
-    ],
-    displayName: 'Priests',
-    requiredFields: ['priest_name']
-  },
-  user_tbl: {
-    fields: [
-      'user_firstname',
-      'user_middle',
-      'user_lastname',
-      'user_gender',
-      // 'user_status',
-      'user_email',
-      'user_mobile',
-      'user_bday',
-      // 'user_image'
-    ],
-    displayName: 'Users',
-    requiredFields: ['user_email', 'user_firstname', 'user_lastname']
-  }
-};
+// Remove the inline table structures - now imported from config
 
 const AdminDashboard = () => {
-  const [tables, setTables] = useState([]);
+  // DEBUG: Add logging to track component renders
+  console.log('AdminDashboard component rendering at:', new Date().toISOString());
+  console.log('AdminDashboard render count:', Math.random()); // Unique identifier per render
+  
+  const [tables, setTables] = useState(getRegularTableKeys());
   const [selectedTable, setSelectedTable] = useState(null);
   const [tableData, setTableData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -265,7 +126,7 @@ const AdminDashboard = () => {
   const { isAdmin, loading: authLoading, logout, adminData } = useAdminAuth();
   const CHART_COLORS = ['#0088FE', '#FF6B6B', '#FFBB28', '#FF8042', '#8884D8', '#00C49F'];
   
-  const [bookingTables, setBookingTables] = useState(Object.keys(BOOKING_TABLE_STRUCTURES));
+  const [bookingTables] = useState(getSacramentTableKeys());
   const [selectedSacrament, setSelectedSacrament] = useState(null);
   const [openSacramentDialog, setOpenSacramentDialog] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -861,6 +722,7 @@ const AdminDashboard = () => {
       // Get the record data from the record_data field
       let recordToRestore;
       try {
+        console.log('Data to parse:', record.record_data);
         // If record_data is a string, parse it
         if (typeof record.record_data === 'string') {
           recordToRestore = JSON.parse(record.record_data);
@@ -1195,7 +1057,7 @@ const AdminDashboard = () => {
 
   const sacramentCalculateTableStats = (data) => {
     const stats = {};
-    BOOKING_TABLE_STRUCTURES[selectedSacrament]?.fields.forEach(field => {
+    SACRAMENT_TABLE_STRUCTURES[selectedSacrament]?.fields.forEach(field => {
       if (typeof data[0]?.[field] === 'number') {
         stats[field] = {
           min: Math.min(...data.map(row => row[field])),
@@ -1387,7 +1249,7 @@ const AdminDashboard = () => {
                 <Cell key={`${_.name}`} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip />
+            <RechartsTooltip />
             {/* <Legend 
               verticalAlign="bottom" 
               height={36}
@@ -1404,7 +1266,7 @@ const AdminDashboard = () => {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="sacrament" />
             <YAxis />
-            <Tooltip />
+            <RechartsTooltip />
             <Bar dataKey="count" onClick={(data, index) => {
               if (data && data.sacrament) handleSacramentTableSelect(data.sacrament.toLowerCase());
             }} cursor="pointer">
@@ -1423,7 +1285,7 @@ const AdminDashboard = () => {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" />
             <YAxis />
-            <Tooltip />
+            <RechartsTooltip />
             <Line type="monotone" dataKey="amount" />
           </LineChart>
         </div>
@@ -1491,10 +1353,6 @@ const AdminDashboard = () => {
       )}
 
       {/* --- Sacrament Service Tables --------------------------------------------------------------------- */}
-      {/* --- Sacrament Service Tables --------------------------------------------------------------------- */}
-      {/* --- Sacrament Service Tables --------------------------------------------------------------------- */}
-      {/* --- Sacrament Service Tables --------------------------------------------------------------------- */}
-      {/* --- Sacrament Service Tables --------------------------------------------------------------------- */}
       <div className='mb-4'>
         <Box display="flex" gap={2}>
           {/* Tables Sidebar */}
@@ -1502,25 +1360,19 @@ const AdminDashboard = () => {
             <Typography variant="h6" gutterBottom>
               Sacrament Bookings
             </Typography>
-            {bookingTables.map((sacrament) => {
-              return (
-                <>
-                  <Button
-                    key={sacrament}
-                    fullWidth
-                    variant={selectedSacrament === sacrament ? 'contained' : 'text'}
-                    onClick={() => handleSacramentTableSelect(sacrament)}
-                    
-                    sx={{ justifyContent: 'flex-center', mb: 1 }}
-                  >
-                    <span className='text-[#6B5F32] font-bold'>
-                      {BOOKING_TABLE_STRUCTURES[sacrament]?.displayName || sacrament}
-                    </span>
-                  </Button>
-                </>
-              );
-            }
-            )}
+            {bookingTables.map((sacrament) => (
+              <Button
+                key={sacrament}
+                fullWidth
+                variant={selectedSacrament === sacrament ? 'contained' : 'text'}
+                onClick={() => handleSacramentTableSelect(sacrament)}
+                sx={{ justifyContent: 'flex-center', mb: 1 }}
+              >
+                <span className='text-[#6B5F32] font-bold'>
+                  {SACRAMENT_TABLE_STRUCTURES[sacrament]?.displayName || sacrament}
+                </span>
+              </Button>
+            ))}
           </Paper>
 
           <Paper sx={{ p: 2, flex: 1 }}>
@@ -1596,251 +1448,77 @@ const AdminDashboard = () => {
                   </Box>
                 )}
 
-                {/* Search with Autocomplete */}
-                <Autocomplete
-                  freeSolo
-                  options={[]}
-                  value={sacramentSearchQuery}
-                  onChange={(event, newValue) => {
-                    setSacramentSearchQuery(newValue);
-                    applyFilters({
-                      tableData: sacramentTableData,
-                      searchQuery: newValue,
-                      activeFilters: sacramentActiveFilters,
-                      sortConfig: sacramentSortConfig,
-                      setFilteredData: setSacramentFilteredData,
-                      calculateTableStats: sacramentCalculateTableStats,
-                    });
-                  }}
-                  onInputChange={(event, newValue) => {
-                    setSacramentSearchQuery(newValue);
-                    applyFilters({
-                      tableData: sacramentTableData,
-                      searchQuery: newValue,
-                      activeFilters: sacramentActiveFilters,
-                      sortConfig: sacramentSortConfig,
-                      setFilteredData: setSacramentFilteredData,
-                      calculateTableStats: sacramentCalculateTableStats,
-                    });
-                  }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      fullWidth
-                      variant="outlined"
-                      placeholder="Search..."
-                      sx={{ mb: 2 }}
-                      InputProps={{
-                        ...params.InputProps,
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SearchIcon />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-
-                {/* Active Filters Display */}
-                {Object.entries(sacramentActiveFilters).some(([_, filter]) => filter.value) && (
-                  <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {Object.entries(sacramentActiveFilters).map(([field, { value, type }]) => (
-                      value && (
-                        <Chip
-                          key={field}
-                          label={`${field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}: ${value} (${type})`}
-                          onDelete={() => {
-                            const newFilters = { ...sacramentActiveFilters };
-                            delete newFilters[field];
-                            setSacramentActiveFilters(newFilters);
-                            applyFilters({
-                              tableData: sacramentTableData,
-                              searchQuery: sacramentSearchQuery,
-                              activeFilters: newFilters,
-                              sortConfig: sacramentSortConfig,
-                              setFilteredData: setSacramentFilteredData,
-                              calculateTableStats: sacramentCalculateTableStats,
-                            });
-                          }}
-                          color="primary"
-                          variant="outlined"
-                        />
-                      )
-                    ))}
-                  </Box>
-                )}
-
-                {/* Filter Menu */}
-                <Menu
-                  anchorEl={sacramentFilterAnchorEl}
-                  open={Boolean(sacramentFilterAnchorEl)}
-                  onClose={() => setSacramentFilterAnchorEl(null)}
-                  PaperProps={{
-                    style: {
-                      maxHeight: 400,
-                      width: '300px',
-                    },
-                  }}
-                >
-                  {BOOKING_TABLE_STRUCTURES[selectedSacrament]?.fields.map((field) => (
-                    <Box key={field} sx={{ p: 2 }}>
-                      <Typography variant="subtitle2" gutterBottom>
-                        {field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </Typography>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        value={sacramentActiveFilters[field]?.value || ''}
-                        onChange={(e) => handleFilterChange(true, field, e.target.value)}
-                        placeholder="Filter value..."
-                      />
-                      <Box sx={{ mt: 1 }}>
-                        <FormControl size="small" fullWidth>
-                          <Select
-                            value={sacramentActiveFilters[field]?.type || 'contains'}
-                            onChange={(e) => handleFilterChange(true, field, sacramentActiveFilters[field]?.value || '', e.target.value)}
-                            size="small"
-                          >
-                            <MenuItem value="contains">Contains</MenuItem>
-                            <MenuItem value="equals">Equals</MenuItem>
-                            <MenuItem value="starts">Starts with</MenuItem>
-                            <MenuItem value="ends">Ends with</MenuItem>
-                            {(field.includes('date') || field.includes('bday') || field.includes('timestamp')) && (
-                              <>
-                                <MenuItem value="older_to_newer">Older to Newer</MenuItem>
-                                <MenuItem value="newer_to_older">Newer to Older</MenuItem>
-                              </>
-                            )}
-                            {typeof sacramentTableData[0]?.[field] === 'number' && (
-                              <>
-                                <MenuItem value="greater">Greater than</MenuItem>
-                                <MenuItem value="less">Less than</MenuItem>
-                              </>
-                            )}
-                          </Select>
-                        </FormControl>
-                      </Box>
-                    </Box>
-                  ))}
-                </Menu>
-
-                {/* Column Visibility Menu */}
-                <Menu
-                  anchorEl={sacramentColumnAnchorEl}
-                  open={Boolean(sacramentColumnAnchorEl)}
-                  onClose={() => setSacramentColumnAnchorEl(null)}
-                >
-                  {BOOKING_TABLE_STRUCTURES[selectedSacrament]?.fields.map((field) => (
-                    <MenuItem key={field}>
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={sacramentVisibleColumns[field] !== false}
-                            onChange={() => handleColumnToggle({setVisibleColumns: setSacramentVisibleColumns, field})}
-                          />
-                        }
-                        label={field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      />
-                    </MenuItem>
-                  ))}
-                </Menu>
-
-
-                {/* TABLE CONTENTS */}
-                <TableContainer sx={{ maxHeight: 440, overflow:'auto' }} className='rounded-2xl overflow-hidden shadow-lg'>
-                  <Table stickyHeader>
-                    <TableHead className='hover:bg-[#E1D5B8]'>
-                      <TableRow>
-                        {BOOKING_TABLE_STRUCTURES[selectedSacrament]?.fields
-                          .filter(field => sacramentVisibleColumns[field] !== false)
-                          .map((field) => (
-
-                            <TableCell 
-                              key={field}
-                              onClick={() => handleSacramentSort(field)}
-                              sx={{ 
-                                cursor: 'pointer',
-                                '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
-                              }}
-                            >
-                              <Box display="flex" alignItems="center">
-                                {field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                {sacramentSortConfig.key === field && (
-                                  <Box component="span" ml={1}>
-                                    {sacramentSortConfig.direction === 'asc' ? '↑' : '↓'}
-                                  </Box>
-                                )}
-                              </Box>
-                            </TableCell>
-                          ))}
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {sacramentFilteredData
-                        .slice(sacramentPage * sacramentRowsPerPage, sacramentPage * sacramentRowsPerPage + sacramentRowsPerPage)
-                        .map((row, index) => (
-                          <TableRow key={index} className='hover:bg-[#F5F0E2]'>
-                            {BOOKING_TABLE_STRUCTURES[selectedSacrament]?.fields
-                              .filter(field => sacramentVisibleColumns[field] !== false)
-                              .map((field) => (
-                                <TableCell key={field}>
-                                  {field === 'form' ? 
-                                    selectedSacrament === 'baptism' ?
-                                      (<Button
-                                        onClick={() => { displaySacramentForm('Baptism Form', sacramentFilteredData[index].baptism_docu_id, selectedSacrament); }}
-                                        sx={{ color: '#6B5F32', '&:hover': { backgroundColor: '#E1D5B8', color: 'black' } }}>
-                                        View Form
-                                      </Button>)  
-                                    : selectedSacrament === 'burial' ?
-                                      (<Button
-                                        onClick={() => { displaySacramentForm('Burial Form', sacramentFilteredData[index].burial_docu_id, selectedSacrament); }}
-                                        sx={{ color: '#6B5F32', '&:hover': { backgroundColor: '#E1D5B8', color: 'black' } }}>
-                                        View Form
-                                      </Button>)  
-                                      : selectedSacrament === 'wedding' ?
-                                        (<Button
-                                          onClick={() => { displaySacramentForm('Wedding Form', sacramentFilteredData[index].wedding_docu_id, selectedSacrament); }}
-                                          sx={{ color: '#6B5F32', '&:hover': { backgroundColor: '#E1D5B8', color: 'black' } }}>
-                                          View Form
-                                        </Button>)
-                                        : formatDisplayValue(field, row[field])  
-                                  : formatDisplayValue(field, row[field])  
-                                  }
-                                </TableCell>
-                              ))}
-                            <TableCell>
-                              <Tooltip title="Edit">
-                                <IconButton onClick={() => handleSacramentEdit({
-                                  record: row,
-                                  setFormData,
-                                  setEditingRecord,
-                                  setOpenSacramentDialog,
-                                })}>
-                                  <EditIcon />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Delete">
-                                <IconButton onClick={() => handleSacramentDelete(row.id)}>
-                                  <DeleteIcon />
-                                </IconButton>
-                              </Tooltip>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-
-                <TablePagination
-                  component="div"
-                  count={sacramentFilteredData.length}
+                <TableManager
+                  tableStructure={SACRAMENT_TABLE_STRUCTURES[selectedSacrament]}
+                  tableData={sacramentTableData}
+                  filteredData={sacramentFilteredData}
+                  setFilteredData={setSacramentFilteredData}
+                  loading={bookingLoading}
+                  searchQuery={sacramentSearchQuery}
+                  setSearchQuery={setSacramentSearchQuery}
+                  sortConfig={sacramentSortConfig}
+                  setSortConfig={setSacramentSortConfig}
                   page={sacramentPage}
-                  onPageChange={(e, newPage) => setSacramentPage(newPage)}
+                  setPage={setSacramentPage}
                   rowsPerPage={sacramentRowsPerPage}
-                  onRowsPerPageChange={(e) => handleChangeRowsPerPage(e, setSacramentRowsPerPage, setSacramentPage)}
-                  rowsPerPageOptions={[5, 10, 25, 50]}
+                  setRowsPerPage={setSacramentRowsPerPage}
+                  activeFilters={sacramentActiveFilters}
+                  setActiveFilters={setSacramentActiveFilters}
+                  visibleColumns={sacramentVisibleColumns}
+                  setVisibleColumns={setSacramentVisibleColumns}
+                  filterAnchorEl={sacramentFilterAnchorEl}
+                  setFilterAnchorEl={setSacramentFilterAnchorEl}
+                  columnAnchorEl={sacramentColumnAnchorEl}
+                  setColumnAnchorEl={setSacramentColumnAnchorEl}
+                  tableStats={sacramentTableStats}
+                  calculateTableStats={sacramentCalculateTableStats}
+                  onAdd={() => handleSacramentAdd({
+                    selectedSacrament,
+                    setFormData,
+                    setEditingRecord,
+                    setOpenSacramentDialog
+                  })}
+                  onEdit={(record) => handleSacramentEdit({
+                    record,
+                    setFormData,
+                    setEditingRecord,
+                    setOpenSacramentDialog,
+                  })}
+                  onDelete={handleSacramentDelete}
+                  onSort={handleSacramentSort}
+                  onFilterChange={(field, value, type) => handleFilterChange(true, field, value, type)}
+                  renderCustomCell={(field, row, index) => {
+                    if (field === 'form') {
+                      if (selectedSacrament === 'baptism') {
+                        return (
+                          <Button
+                            onClick={() => { displaySacramentForm('Baptism Form', row.baptism_docu_id, selectedSacrament); }}
+                            sx={{ color: '#6B5F32', '&:hover': { backgroundColor: '#E1D5B8', color: 'black' } }}>
+                            View Form
+                          </Button>
+                        );
+                      } else if (selectedSacrament === 'burial') {
+                        return (
+                          <Button
+                            onClick={() => { displaySacramentForm('Burial Form', row.burial_docu_id, selectedSacrament); }}
+                            sx={{ color: '#6B5F32', '&:hover': { backgroundColor: '#E1D5B8', color: 'black' } }}>
+                            View Form
+                          </Button>
+                        );
+                      } else if (selectedSacrament === 'wedding') {
+                        return (
+                          <Button
+                            onClick={() => { displaySacramentForm('Wedding Form', row.wedding_docu_id, selectedSacrament); }}
+                            sx={{ color: '#6B5F32', '&:hover': { backgroundColor: '#E1D5B8', color: 'black' } }}>
+                            View Form
+                          </Button>
+                        );
+                      }
+                      return formatDisplayValue(field, row[field]);
+                    }
+                    return formatDisplayValue(field, row[field]);
+                  }}
+                  title={getDisplaySacrament(selectedSacrament)}
                 />
               </>
             ) : (
@@ -1856,36 +1534,31 @@ const AdminDashboard = () => {
       </div>
 
       {/* --- Database Tables --- */}
-      {/* --- Database Tables --- */}
-      {/* --- Database Tables --- */}
-      {/* --- Database Tables --- */}
-      {/* --- Database Tables --- */}
       <Box display="flex" gap={2}>
+        {/* DEBUG: Log management section render */}
+        {console.log('DEBUG: Management section rendering:', { tables, selectedTable })}
         {/* Tables Sidebar */}
         <Paper sx={{ p: 2, width: '200px' }}>
           <Typography variant="h6" gutterBottom>
             Management
           </Typography>
-          {tables.map((table) => {
-            return (
-              <>
-                <Button
-                  key={table}
-                  fullWidth
-                  variant={selectedTable === table ? 'contained' : 'text'}
-                  onClick={() => handleTableSelect(table)}
-                  sx={{ justifyContent: 'flex-center', mb: 1 }}
-                >
-                   <span className='text-[#6B5F32] font-bold'>
-                    {TABLE_STRUCTURES[table]?.displayName || table}
-                   </span>
-                </Button>
-                {table === 'request_tbl' && (
-                  <Divider sx={{ my: 1 }} />
-                )}
-              </>
-            );
-          }
+          {tables.map((table) => (
+            <React.Fragment key={table}>
+              <Button
+                fullWidth
+                variant={selectedTable === table ? 'contained' : 'text'}
+                onClick={() => handleTableSelect(table)}
+                sx={{ justifyContent: 'flex-center', mb: 1 }}
+              >
+                <span className='text-[#6B5F32] font-bold'>
+                  {TABLE_STRUCTURES[table]?.displayName || table}
+                </span>
+              </Button>
+              {table === 'request_tbl' && (
+                <Divider sx={{ my: 1 }} />
+              )}
+            </React.Fragment>
+          )
           )}
         </Paper>
 
@@ -1963,233 +1636,52 @@ const AdminDashboard = () => {
                 </Box>
               )}
 
-              {/* Search with Autocomplete */}
-              <Autocomplete
-                freeSolo
-                options={[]}
-                value={searchQuery}
-                onChange={(event, newValue) => {
-                  setSearchQuery(newValue);
-                  applyFilters({
-                    tableData,
-                    searchQuery: newValue,
-                    activeFilters,
-                    sortConfig,
-                    setFilteredData,
-                    calculateTableStats,
-                  });
-                }}
-                onInputChange={(event, newValue) => {
-                  setSearchQuery(newValue);
-                  applyFilters({
-                    tableData,
-                    searchQuery: newValue,
-                    activeFilters,
-                    sortConfig,
-                    setFilteredData,
-                    calculateTableStats,
-                  });
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    fullWidth
-                    variant="outlined"
-                    placeholder="Search..."
-                    sx={{ mb: 2 }}
-                    InputProps={{
-                      ...params.InputProps,
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                )}
-              />
-
-              {/* Active Filters Display */}
-              {Object.entries(activeFilters).some(([_, filter]) => filter.value) && (
-                <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {Object.entries(activeFilters).map(([field, { value, type }]) => (
-                    value && (
-                      <Chip
-                        key={field}
-                        label={`${field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}: ${value} (${type})`}
-                        onDelete={() => {
-                          const newFilters = { ...activeFilters };
-                          delete newFilters[field];
-                          setActiveFilters(newFilters);
-                          applyFilters({
-                            tableData,
-                            searchQuery,
-                            activeFilters: newFilters,
-                            sortConfig,
-                            setFilteredData,
-                            calculateTableStats,
-                          });
-                        }}
-                        color="primary"
-                        variant="outlined"
-                      />
-                    )
-                  ))}
-                </Box>
-              )}
-
-              {/* Filter Menu */}
-              <Menu
-                anchorEl={filterAnchorEl}
-                open={Boolean(filterAnchorEl)}
-                onClose={() => setFilterAnchorEl(null)}
-                PaperProps={{
-                  style: {
-                    maxHeight: 400,
-                    width: '300px',
-                  },
-                }}
-              >
-                {TABLE_STRUCTURES[selectedTable]?.fields.map((field) => (
-                  <Box key={field} sx={{ p: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                      {field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                    </Typography>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      value={activeFilters[field]?.value || ''}
-                      onChange={(e) => handleFilterChange(false, field, e.target.value)}
-                      placeholder="Filter value..."
-                    />
-                    <Box sx={{ mt: 1 }}>
-                      <FormControl size="small" fullWidth>
-                        <Select
-                          value={activeFilters[field]?.type || 'contains'}
-                          onChange={(e) => handleFilterChange(false, field, activeFilters[field]?.value || '', e.target.value)}
-                          size="small"
-                        >
-                          <MenuItem value="contains">Contains</MenuItem>
-                          <MenuItem value="equals">Equals</MenuItem>
-                          <MenuItem value="starts">Starts with</MenuItem>
-                          <MenuItem value="ends">Ends with</MenuItem>
-                          {(field.includes('date') || field.includes('bday') || field.includes('timestamp')) && (
-                            <>
-                              <MenuItem value="older_to_newer">Older to Newer</MenuItem>
-                              <MenuItem value="newer_to_older">Newer to Older</MenuItem>
-                            </>
-                          )}
-                          {typeof tableData[0]?.[field] === 'number' && (
-                            <>
-                              <MenuItem value="greater">Greater than</MenuItem>
-                              <MenuItem value="less">Less than</MenuItem>
-                            </>
-                          )}
-                        </Select>
-                      </FormControl>
-                    </Box>
-                  </Box>
-                ))}
-              </Menu>
-
-              {/* Column Visibility Menu */}
-              <Menu
-                anchorEl={columnAnchorEl}
-                open={Boolean(columnAnchorEl)}
-                onClose={() => setColumnAnchorEl(null)}
-              >
-                {TABLE_STRUCTURES[selectedTable]?.fields.map((field) => (
-                  <MenuItem key={field}>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={visibleColumns[field] !== false}
-                          onChange={() => handleColumnToggle({setVisibleColumns, field})}
-                        />
-                      }
-                      label={field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                    />
-                  </MenuItem>
-                ))}
-              </Menu>
-
-
-              {/* TABLE CONTENTS */}
-              <TableContainer sx={{ maxHeight: 440, overflow:'auto' }} className='rounded-2xl shadow-lg'>
-                <Table stickyHeader>
-                  <TableHead className='hover:bg-[#E1D5B8]'>
-                    <TableRow>
-                      {TABLE_STRUCTURES[selectedTable]?.fields
-                        .filter(field => visibleColumns[field] !== false)
-                        .map((field) => (
-
-                          <TableCell 
-                            key={field}
-                            onClick={() => handleSort(field)}
-                            sx={{ 
-                              cursor: 'pointer',
-                              '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
-                            }}
-                          >
-                            <Box display="flex" alignItems="center">
-                              {field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                              {sortConfig.key === field && (
-                                <Box component="span" ml={1}>
-                                  {sortConfig.direction === 'asc' ? '↑' : '↓'}
-                                </Box>
-                              )}
-                            </Box>
-                          </TableCell>
-                        ))}
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredData
-                      .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                      .map((row, index) => (
-                        <TableRow key={index} className='hover:bg-[#F5F0E2]'>
-                          {TABLE_STRUCTURES[selectedTable]?.fields
-                            .filter(field => visibleColumns[field] !== false)
-                            .map((field) => (
-                              <TableCell key={field}>
-                                {(selectedTable === 'document_tbl' && (field === 'firstname' || field === 'lastname' || field === 'middle'))
-                                  ? (row[field] === null || row[field] === undefined ? '-' : row[field])
-                                  : formatDisplayValue(field, row[field])
-                                }
-                              </TableCell>
-                            ))}
-                          <TableCell>
-                            <Tooltip title="Edit">
-                              <IconButton onClick={() => handleEdit({
-                                record: row,
-                                setFormData,
-                                setEditingRecord,
-                                setOpenDialog,
-                              })}>
-                                <EditIcon />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete">
-                              <IconButton onClick={() => handleDelete(row.id)}>
-                                <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              <TablePagination
-                component="div"
-                count={filteredData.length}
+              <TableManager
+                tableStructure={TABLE_STRUCTURES[selectedTable]}
+                tableData={tableData}
+                filteredData={filteredData}
+                setFilteredData={setFilteredData}
+                loading={loading}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                sortConfig={sortConfig}
+                setSortConfig={setSortConfig}
                 page={page}
-                onPageChange={(e, newPage) => setPage(newPage)}
+                setPage={setPage}
                 rowsPerPage={rowsPerPage}
-                onRowsPerPageChange={(e) => handleChangeRowsPerPage(e, setRowsPerPage, setPage)}
-                rowsPerPageOptions={[5, 10, 25, 50]}
+                setRowsPerPage={setRowsPerPage}
+                activeFilters={activeFilters}
+                setActiveFilters={setActiveFilters}
+                visibleColumns={visibleColumns}
+                setVisibleColumns={setVisibleColumns}
+                filterAnchorEl={filterAnchorEl}
+                setFilterAnchorEl={setFilterAnchorEl}
+                columnAnchorEl={columnAnchorEl}
+                setColumnAnchorEl={setColumnAnchorEl}
+                tableStats={tableStats}
+                calculateTableStats={calculateTableStats}
+                onAdd={() => handleAdd({
+                  selectedTable,
+                  setFormData,
+                  setEditingRecord,
+                  setOpenDialog
+                })}
+                onEdit={(record) => handleEdit({
+                  record,
+                  setFormData,
+                  setEditingRecord,
+                  setOpenDialog,
+                })}
+                onDelete={handleDelete}
+                onSort={handleSort}
+                onFilterChange={(field, value, type) => handleFilterChange(false, field, value, type)}
+                renderCustomCell={(field, row, index) => {
+                  if (selectedTable === 'document_tbl' && (field === 'firstname' || field === 'lastname' || field === 'middle')) {
+                    return row[field] === null || row[field] === undefined ? '-' : row[field];
+                  }
+                  return formatDisplayValue(field, row[field]);
+                }}
+                title={TABLE_STRUCTURES[selectedTable]?.displayName || selectedTable}
               />
             </>
           ) : (
@@ -2336,7 +1828,7 @@ const AdminDashboard = () => {
           setEditingRecord,
         })}
         handleSave={() => handleSacramentSave({
-          BOOKING_TABLE_STRUCTURES,
+          SACRAMENT_TABLE_STRUCTURES,
           selectedSacrament,
           formData,
           editingRecord,

@@ -293,7 +293,7 @@ const handleSave = async ({
 };
 
 const handleSacramentSave = async ({
-    BOOKING_TABLE_STRUCTURES,
+    SACRAMENT_TABLE_STRUCTURES,
     selectedSacrament,
     formData,
     editingRecord,
@@ -306,7 +306,7 @@ const handleSacramentSave = async ({
     fetchStats
 }) => {
     try {
-      const requiredFields = BOOKING_TABLE_STRUCTURES[selectedSacrament].requiredFields;
+      const requiredFields = SACRAMENT_TABLE_STRUCTURES[selectedSacrament].requiredFields;
       const missingFields = requiredFields.filter(field => !formData[field]);
       console.log("requiredFields:", requiredFields);
       console.log("missingFields:", missingFields);
