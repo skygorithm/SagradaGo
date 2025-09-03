@@ -20,6 +20,8 @@ console.log('- NODE_ENV:', process.env.NODE_ENV || 'development');
 console.log('- API Key configured:', !!process.env.GEMINI_API_KEY);
 console.log('- Supabase URL:', process.env.REACT_APP_SUPABASE_URL ? 'Configured' : 'Not configured');
 console.log('- Supabase Service Role Key:', process.env.REACT_SUPABASE_SERVICE_ROLE_KEY ? 'Configured' : 'Not configured');
+console.log('- reCAPTCHA Site Key:', process.env.RECAPTCHA_SITE_KEY ? 'Configured' : 'Not configured');
+console.log('- reCAPTCHA Secret Key:', process.env.RECAPTCHA_SECRET_KEY ? 'Configured' : 'Not configured');
 
 // ===== Middleware Setup =====
 // Configure CORS
@@ -125,15 +127,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-// TEMPORARILY DISABLE API REDIRECT FOR DEBUGGING
-// This redirect was causing infinite loops
-/*
-app.use('/api', (req, res, next) => {
-  const target = `https://sagradago.onrender.com${req.originalUrl}`;
-  console.log(`Redirecting API request to ${target}`);
-  res.redirect(307, target);
-});
-*/
 
 // Add enhanced diagnostic logging for API requests
 app.use('/api', (req, res, next) => {
@@ -279,6 +272,70 @@ app.post('/api/gemini', async (req, res) => {
 });
 
 /**
+ * reCAPTCHA verification endpoint
+ * POST /api/verify-recaptcha
+ * Body: { token: string }
+ */
+app.post('/api/verify-recaptcha', async (req, res) => {
+  try {
+    const { token } = req.body;
+    
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        error: 'reCAPTCHA token is required'
+      });
+    }
+
+    if (!process.env.RECAPTCHA_SECRET_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'reCAPTCHA not configured on server'
+      });
+    }
+
+    // Verify with Google reCAPTCHA API
+    const response = await axios.post(
+      'https://www.google.com/recaptcha/api/siteverify',
+      null,
+      {
+        params: {
+          secret: process.env.RECAPTCHA_SECRET_KEY,
+          response: token
+        },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
+
+    const { success, score, action } = response.data;
+
+    // For reCAPTCHA v3, check score (0.0 = bot, 1.0 = human)
+    if (success && (score === undefined || score >= 0.5)) {
+      res.json({
+        success: true,
+        score: score,
+        action: action
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        error: 'reCAPTCHA verification failed',
+        score: score
+      });
+    }
+
+  } catch (error) {
+    console.error('reCAPTCHA verification error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to verify reCAPTCHA'
+    });
+  }
+});
+
+/**
  * Health check endpoint to verify server and API status
  * GET /api/health
  */
@@ -296,6 +353,8 @@ app.get('/api/health', async (req, res) => {
   console.log('  - GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'Configured' : 'NOT CONFIGURED');
   console.log('  - REACT_APP_SUPABASE_URL:', process.env.REACT_APP_SUPABASE_URL ? 'Configured' : 'NOT CONFIGURED');
   console.log('  - REACT_SUPABASE_SERVICE_ROLE_KEY:', process.env.REACT_SUPABASE_SERVICE_ROLE_KEY ? 'Configured' : 'NOT CONFIGURED');
+  console.log('  - RECAPTCHA_SITE_KEY:', process.env.RECAPTCHA_SITE_KEY ? 'Configured' : 'NOT CONFIGURED');
+  console.log('  - RECAPTCHA_SECRET_KEY:', process.env.RECAPTCHA_SECRET_KEY ? 'Configured' : 'NOT CONFIGURED');
   console.log('  - NODE_ENV:', process.env.NODE_ENV || 'development');
   console.log('  - PORT:', process.env.PORT || 5001);
 
@@ -316,6 +375,8 @@ app.get('/api/health', async (req, res) => {
     apiKeyConfigured: !!process.env.GEMINI_API_KEY,
     supabaseUrlConfigured: !!process.env.REACT_APP_SUPABASE_URL,
     supabaseServiceKeyConfigured: !!process.env.REACT_SUPABASE_SERVICE_ROLE_KEY,
+    recaptchaSiteKeyConfigured: !!process.env.RECAPTCHA_SITE_KEY,
+    recaptchaSecretKeyConfigured: !!process.env.RECAPTCHA_SECRET_KEY,
     apiTestSuccessful: apiTest,
     environment: process.env.NODE_ENV || 'development',
     serverHost: req.headers.host,
@@ -475,6 +536,8 @@ const startServer = async () => {
     console.log('  GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? '✅ SET (length: ' + process.env.GEMINI_API_KEY.length + ')' : '❌ MISSING');
     console.log('  REACT_APP_SUPABASE_URL:', process.env.REACT_APP_SUPABASE_URL ? '✅ SET' : '❌ MISSING');
     console.log('  REACT_SUPABASE_SERVICE_ROLE_KEY:', process.env.REACT_SUPABASE_SERVICE_ROLE_KEY ? '✅ SET (length: ' + process.env.REACT_SUPABASE_SERVICE_ROLE_KEY.length + ')' : '❌ MISSING');
+    console.log('  RECAPTCHA_SITE_KEY:', process.env.RECAPTCHA_SITE_KEY ? '✅ SET (length: ' + process.env.RECAPTCHA_SITE_KEY.length + ')' : '❌ MISSING');
+    console.log('  RECAPTCHA_SECRET_KEY:', process.env.RECAPTCHA_SECRET_KEY ? '✅ SET (length: ' + process.env.RECAPTCHA_SECRET_KEY.length + ')' : '❌ MISSING');
     
     // Log process information
     console.log('🖥️  DIAGNOSTIC: Process Information:');
@@ -485,7 +548,13 @@ const startServer = async () => {
     console.log('  Working Directory:', process.cwd());
     
     // Validate required environment variables
-    const requiredEnvVars = ['GEMINI_API_KEY', 'REACT_APP_SUPABASE_URL', 'REACT_SUPABASE_SERVICE_ROLE_KEY'];
+    const requiredEnvVars = [
+      'GEMINI_API_KEY', 
+      'REACT_APP_SUPABASE_URL', 
+      'REACT_SUPABASE_SERVICE_ROLE_KEY',
+      'RECAPTCHA_SITE_KEY',
+      'RECAPTCHA_SECRET_KEY'
+    ];
     const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
     console.log('🔐 DIAGNOSTIC: Environment Variables Validation:');

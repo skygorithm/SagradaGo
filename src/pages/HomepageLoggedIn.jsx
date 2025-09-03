@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Box, TextField, Typography, Grid, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
-import { FormControl, InputLabel, Select, MenuItem, Alert } from '@mui/material';
+import { FormControl, InputLabel, Select, MenuItem, Alert, InputAdornment } from '@mui/material';
 import { DatePicker, TimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import CardPopup from './CardPopUp.jsx';
@@ -31,9 +31,6 @@ const FeatureCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-// Used for converting Blob to Image File
-
-
 const HomePageLoggedIn = ({ onLogout }) => {
   const navigate = useNavigate();
 
@@ -50,6 +47,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
   const [volunteerOpen, setVolunteerOpen] = useState(false);
   const [isVolunteer, setIsVolunteer] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   
   // For Uploaded Document Images
   const [residentForm, setResidentForm] = useState({
@@ -57,7 +55,6 @@ const HomePageLoggedIn = ({ onLogout }) => {
   });
 
   // For Baptism Document Variables
-  // Naka json na lang so all data will be stored in one state
   const [baptismForm, setBaptismForm] = useState({
     main_godfather: {},
     main_godmother: {},
@@ -93,26 +90,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
     bride_permission: null,
   });
 
-
-  // Check authentication on mount
-  // useEffect(() => {
-  //   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  //   if (!isAuthenticated) {
-  //     navigate('/');
-  //   }
-  // }, [navigate]);
-  //  useEffect(() => {
-  //   async function checkLoginStatus() {
-  //     const isLoggedIn = await isUserLoggedIn();
-  //     console.log("Is user logged in? ", isLoggedIn);
-  //     if (!isLoggedIn) {
-  //       navigate('/');
-  //     }
-  //   }
-  //   checkLoginStatus();
-  // }, []);
-
-  // Navigation links for logged-in users
+  // Navigation links for logged-in users (without logout)
   const navLinks = [
     { label: 'HOME', action: () => handleNavigation('/home'), highlight: !DonateOpen && !bookingOpen && !volunteerOpen },
     { label: 'DONATE', action: () => setDonateOpen(true), highlight: DonateOpen },
@@ -120,7 +98,6 @@ const HomePageLoggedIn = ({ onLogout }) => {
     { label: 'EVENTS', action: () => handleNavigation('/events'), highlight: false },
     { label: 'BE A VOLUNTEER', action: () => setVolunteerOpen(true), highlight: volunteerOpen },
     { label: 'VIRTUAL TOUR', action: () => handleNavigation('/explore-parish'), highlight: false },
-    { label: 'LOGOUT', action: onLogout, highlight: false }
   ];
 
   const handleNavigation = (path) => {
@@ -136,21 +113,13 @@ const HomePageLoggedIn = ({ onLogout }) => {
       return () => clearTimeout(timer);
     }
   }, [errorMessage]);
+
   const handleBooking = async () => {
     if (!selectedSacrament || !date || !time || !pax) {
       setErrorMessage('Please select a sacrament, date, time, and number of people.');
       return;
     }
-    // if (residentForm.id === null) {
-    //   setErrorMessage('Please upload the required document image.');
-    //   return;
-    // }
-    // Confession - pwedeng 2 days 
-    // Wedding - 6 months
-    // Burial mass - 2-3 days since biglaan talaga
-    // Baptism - 1 & ½ month
-    // Confirmation - 2 months
-    // Communion - 2 months
+
     let restriction = restrictSacramentBooking(selectedSacrament, date);
     if (restriction !== '') {
       setErrorMessage(restriction);
@@ -189,26 +158,16 @@ const HomePageLoggedIn = ({ onLogout }) => {
       }
       const username = `${cachedUserData.user_lastname}, ${cachedUserData.user_firstname}${cachedUserData.user_middle ? " " + cachedUserData.user_middle : ''}`;
       let datenow = new Date();
-      // Format date as YYYY-MM-DD
       const datePart = datenow.toLocaleDateString().replace(/\//g, '-');
-      // Format time as HH-MM-SS
       const timePart = datenow
       .toLocaleTimeString('en-US', { hour12: false });
-      datenow = `${datePart}_${timePart}`; // Combine date and time for file path compatibility
+      datenow = `${datePart}_${timePart}`;
       
-      // const file = await blobUrlToFile(residentForm.id, `${username}.png`);
-      // const filePath = `private/${selectedSacrament}/${datenow}_${file.name}`;
-      // if (!file || !(file instanceof File)) {
-      //   setErrorMessage('Failed to prepare document file for upload. Please try again.');
-      //   return;
-      // }
-
       // Asikasuhin ang mga Specific Documents based on the sacrament
       let specificDocumentTable = {
         date_created: new Date().toISOString(),
       }
       if (selectedSacrament === 'Wedding') {
-        // Double check if required fields are filled
         const validateResult = weddingFormValidation(weddingForm, setErrorMessage);
         if (!validateResult) {
           return;
@@ -221,7 +180,6 @@ const HomePageLoggedIn = ({ onLogout }) => {
         const weddingBrideFullname = weddingForm.bride_fullname;
         
         // Upload IDs
-
         const groom1x1Url = await saveWeddingDocument(datenow, "Groom 1x1", specificDocumentTable.groom_1x1, `${username}_groom_pic_${weddingGroomFullname}.png`, setErrorMessage);
         if (!groom1x1Url) {
           return;
@@ -311,9 +269,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
         specificDocumentTable.bride_permission = bridePermissionUrl;
 
       } else if (selectedSacrament === 'Baptism') {
-        // Double check if required fields are filled
         const validateResult = baptismFormValidation(cachedUserData, baptismForm, setErrorMessage);
-        // add the form values in specificDocumentTable to be put sa database
         specificDocumentTable = {
           ...specificDocumentTable,
           ...baptismForm,
@@ -331,28 +287,6 @@ const HomePageLoggedIn = ({ onLogout }) => {
           return;
         }
       }
-
-
-      // // Upload the file first on the Supabase storage
-      // const { data: storageData, error: storageError } = await supabase.storage
-      //   .from('booking-documents')
-      //   .upload(filePath, file);
-
-      // if (storageError) {
-      //   console.error('Upload error:', storageError.message);
-      //   setErrorMessage('Server Failed to upload the document. Please try again.');
-      //   return;
-      // } else {
-      //   console.log('Upload successful:', storageData.path);
-      // }
-
-      // // Get the public URL of the uploaded file to be stored in the database
-      // const { data: publicUrlData } = supabase
-      //   .storage
-      //   .from('booking-documents')
-      //   .getPublicUrl(filePath);
-
-      // const fileUrl = publicUrlData?.publicUrl;
 
       // Generate a transaction ID
       const transactionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -377,7 +311,6 @@ const HomePageLoggedIn = ({ onLogout }) => {
         booking_pax: parseInt(pax),
         booking_status: 'pending',
         booking_transaction: transactionId,
-        // document: fileUrl,
         ...(specificDocumentId && selectedSacrament === 'Wedding' ? {
           wedding_docu_id: specificDocumentId
         } : specificDocumentId && selectedSacrament === 'Baptism' ? {
@@ -395,7 +328,6 @@ const HomePageLoggedIn = ({ onLogout }) => {
 
       alert(`Booking confirmed for ${selectedSacrament} on ${date.toLocaleDateString()} at ${time.toLocaleTimeString()} for ${pax} people`);
       if (selectedSacrament === 'Wedding') {
-
         setWeddingForm({
           groom_fullname: '',
           bride_fullname: '',
@@ -446,7 +378,9 @@ const HomePageLoggedIn = ({ onLogout }) => {
   };
 
   const handleDonate = async () => {
-    if (amount === '' || isNaN(amount) || parseFloat(amount) <= 0) {
+    const parsedAmount = parseFloat(amount);
+    
+    if (!amount || amount === '' || isNaN(parsedAmount) || parsedAmount <= 0) {
       setErrorMessage('Please enter a valid donation amount.');
       return;
     }
@@ -454,12 +388,12 @@ const HomePageLoggedIn = ({ onLogout }) => {
     const { data: { user } } = await supabase.auth.getUser();
       
     if (!user) {
-      setErrorMessage('You must be logged in to make a booking.');
+      setErrorMessage('You must be logged in to make a donation.');
       return;
     }
     
     const donationData = {
-      donation_amount: parseFloat(amount),
+      donation_amount: parsedAmount,
       donation_intercession: donationIntercession,
       user_id: user.id,
       is_deleted: false,
@@ -467,7 +401,6 @@ const HomePageLoggedIn = ({ onLogout }) => {
       date_created: new Date().toISOString(),
     };
     
-
     const { error } = await supabase
       .from('donation_tbl')
       .insert([donationData]);
@@ -478,10 +411,10 @@ const HomePageLoggedIn = ({ onLogout }) => {
     }
     console.log('Donation successful:', donationData);
 
-    alert(`Thank you! You have donated PHP ${amount}`);
+    alert(`Thank you! You have donated PHP ${parsedAmount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
     setAmount('');
+    setDonationIntercession('');
     setDonateOpen(false);
-    // set the donation thingy
     navigate('/home');
   };
 
@@ -508,120 +441,180 @@ const HomePageLoggedIn = ({ onLogout }) => {
     },
   ];
 
-  // const handleUploadID = (event, def=true, inputRef = null) => {
-  //   if (def) {
-  //     hiddenInputRef1.current.click();
-  //   } else {
-  //     inputRef.current.click();
-  //   }
-  // };
-
-  // const handleChangeID = async (event, resident=true, setForm = null) => {
-  //     const fileUploaded = event.target.files[0];
-  //     if (fileUploaded) {
-  //       setIsIDProcessing(true);
-  //       try {
-  //         const url = URL.createObjectURL(fileUploaded);
-  //         if (resident) {
-  //           setResidentForm((prev) => ({ ...prev, id: url }));
-  //         } else {
-  //           setForm((prev => ({ ...prev, id: url })));
-  //         }
-  //       } catch (error) {
-  //         console.error("Error removing background:", error);
-  //       } finally {
-  //         setIsIDProcessing(false);
-  //       }
-  //     }
-  // };
-
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header Section */}
-      <header className="bg-white shadow-md py-4 px-6">
-        <div className="flex justify-between items-center max-w-7xl mx-auto">
-          <div className="flex items-center cursor-pointer" onClick={() => handleNavigation('/home')}>
-            <img 
-              src="/images/sagrada.png" 
-              alt="Sagrada Familia Parish Logo" 
-              className="h-12 w-12 mr-2" 
-              style={{ background: 'transparent' }}
-            />
-            <span className="text-2xl font-bold text-[#E1D5B8] hidden sm:block">SagradaGo</span>
-          </div>
-          <nav className="hidden md:flex space-x-6">
-            {navLinks.map((link) => (
-              link.label === 'LOGOUT' ? (
-                <button
-                  key={link.label}
-                  onClick={() => setShowLogoutConfirm(true)}
-                  className="text-white bg-[#E1D5B8] border border-[#E1D5B8] rounded px-4 py-2 hover:bg-[#d1c5a8] hover:text-black transition-colors duration-200"
-                >
-                  {link.label}
-                </button>
-              ) : (
+      {/* Header Section - Redesigned */}
+      <header className="bg-white shadow-lg border-b-2 border-[#E1D5B8]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo Section */}
+            <div 
+              className="flex items-center cursor-pointer group transition-transform duration-200 hover:scale-105" 
+              onClick={() => handleNavigation('/home')}
+            >
+              <div className="relative">
+                <img 
+                  src="/images/sagrada.png" 
+                  alt="Sagrada Familia Parish Logo" 
+                  className="h-10 w-10 mr-3 transition-transform duration-200 group-hover:rotate-3" 
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold text-[#6B5F32] hidden sm:block">SagradaGo</span>
+                <span className="text-xs text-gray-500 hidden sm:block">Parish Management</span>
+              </div>
+            </div>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center space-x-1">
+              {navLinks.map((link) => (
                 <button
                   key={link.label}
                   onClick={link.action}
-                  className={`text-black hover:text-[#E1D5B8] relative group transition-colors duration-200${
-                    link.highlight ? ' text-[#E1D5B8] underline underline-offset-4' : ''
+                  className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 group ${
+                    link.highlight 
+                      ? 'bg-[#E1D5B8] text-[#6B5F32] shadow-md' 
+                      : 'text-gray-700 hover:text-[#6B5F32] hover:bg-gray-50'
                   }`}
                 >
                   {link.label}
+                  {!link.highlight && (
+                    <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-[#E1D5B8] transition-all duration-200 group-hover:w-full group-hover:left-0"></span>
+                  )}
                 </button>
-              )
-            ))}
-          </nav>
-          <div className="flex items-center space-x-4">
-            <button 
-              className="md:hidden p-2 ml-2"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? '✕' : '☰'}
-            </button>
-            <a
-              href="/profile"
-              className="ml-4"
-              onClick={e => {
-                e.preventDefault();
-                e.stopPropagation();
-                navigate('/profile');
-              }}
-            >
-              <img
-                src="/images/wired-outline-21-avatar-hover-jumping.webp"
-                alt="Profile"
-                className="w-10 h-10 rounded-full border-2 border-[#E1D5B8] hover:shadow-lg transition-shadow duration-200"
-                style={{ objectFit: 'cover' }}
-              />
-            </a>
+              ))}
+            </nav>
+
+            {/* Right Section - Logout and Profile */}
+            <div className="flex items-center space-x-3">
+              {/* Desktop Logout Button */}
+              <button
+                onClick={() => setShowLogoutConfirm(true)}
+                className="hidden lg:flex items-center px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors duration-200 shadow-md hover:shadow-lg"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                SIGN OUT
+              </button>
+
+              {/* Profile Button with Dropdown */}
+              <div 
+                className="relative"
+                onMouseEnter={() => setProfileDropdownOpen(true)}
+                onMouseLeave={() => setProfileDropdownOpen(false)}
+              >
+                <button
+                  className="relative group p-1 rounded-full transition-all duration-200 hover:bg-gray-50"
+                >
+                  <div className="relative">
+                    <img
+                      src="/images/wired-outline-21-avatar-hover-jumping.webp"
+                      alt="Profile"
+                      className="w-10 h-10 rounded-full border-2 border-[#E1D5B8] transition-all duration-200 group-hover:border-[#6B5F32] group-hover:shadow-lg"
+                      style={{ objectFit: 'cover' }}
+                    />
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full"></div>
+                  </div>
+                </button>
+
+                {/* Profile Dropdown Menu */}
+                <div className={`absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 transition-all duration-200 ${
+                  profileDropdownOpen ? 'opacity-100 visible transform translate-y-0' : 'opacity-0 invisible transform -translate-y-2'
+                }`}>
+                  <button
+                    onClick={() => {
+                      navigate('/profile');
+                      setProfileDropdownOpen(false);
+                    }}
+                    className="flex items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-[#6B5F32] transition-colors duration-200"
+                  >
+                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    Edit Profile
+                  </button>
+                  <div className="border-t border-gray-100 my-1"></div>
+                  <button
+                    onClick={() => {
+                      setShowLogoutConfirm(true);
+                      setProfileDropdownOpen(false);
+                    }}
+                    className="flex items-center w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 transition-colors duration-200"
+                  >
+                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    Logout
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile Menu Button */}
+              <button 
+                className="lg:hidden p-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                <div className="relative w-6 h-6">
+                  <span className={`absolute top-1 left-0 w-6 h-0.5 bg-[#6B5F32] transition-all duration-300 ${mobileMenuOpen ? 'rotate-45 top-3' : ''}`}></span>
+                  <span className={`absolute top-3 left-0 w-6 h-0.5 bg-[#6B5F32] transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-0' : 'opacity-100'}`}></span>
+                  <span className={`absolute top-5 left-0 w-6 h-0.5 bg-[#6B5F32] transition-all duration-300 ${mobileMenuOpen ? '-rotate-45 top-3' : ''}`}></span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Menu */}
+          <div className={`lg:hidden transition-all duration-300 ease-in-out ${mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
+            <div className="py-4 space-y-2 bg-gray-50 rounded-b-lg shadow-inner">
+              {navLinks.map((link) => (
+                <button
+                  key={link.label}
+                  onClick={() => {
+                    link.action();
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 transition-colors duration-200 ${
+                    link.highlight 
+                      ? 'bg-[#E1D5B8] text-[#6B5F32] shadow-md' 
+                      : 'text-gray-700 hover:bg-white hover:text-[#6B5F32] hover:shadow-sm'
+                  }`}
+                >
+                  <span className="w-2 h-2 bg-current rounded-full mr-3 opacity-60"></span>
+                  {link.label}
+                </button>
+              ))}
+              
+              {/* Mobile Profile Link */}
+              <button
+                onClick={() => {
+                  navigate('/profile');
+                  setMobileMenuOpen(false);
+                }}
+                className="flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 text-gray-700 hover:bg-white hover:text-[#6B5F32] hover:shadow-sm transition-colors duration-200"
+              >
+                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                Edit Profile
+              </button>
+
+              {/* Mobile Logout Button */}
+              <button
+                onClick={() => {
+                  setShowLogoutConfirm(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 text-red-600 hover:bg-red-50 transition-colors duration-200"
+              >
+                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                LOGOUT
+              </button>
+            </div>
           </div>
         </div>
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white py-2 px-4 space-y-2 mt-2">
-            {navLinks.map((link) => (
-              link.label === 'LOGOUT' ? (
-                <button
-                  key={link.label}
-                  onClick={() => setShowLogoutConfirm(true)}
-                  className="block w-full text-left p-2 text-white bg-[#E1D5B8] border border-[#E1D5B8] rounded hover:bg-[#d1c5a8] hover:text-black transition-colors duration-200"
-                >
-                  {link.label}
-                </button>
-              ) : (
-                <button
-                  key={link.label}
-                  onClick={link.action}
-                  className={`block w-full text-left p-2 text-black hover:text-[#E1D5B8]${
-                    link.highlight ? ' text-[#E1D5B8] underline underline-offset-4' : ''
-                  }`}
-                >
-                  {link.label}
-                </button>
-              )
-            ))}
-          </div>
-        )}
       </header>
 
       {/* Main Content */}
@@ -841,11 +834,42 @@ const HomePageLoggedIn = ({ onLogout }) => {
           <TextField
             label="Enter Amount"
             variant="outlined"
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            value={amount === '0' || amount === '' ? '' : `${(parseFloat(amount) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            onChange={(e) => {
+              const input = e.target.value;
+              const digitsOnly = input.replace(/[^\d]/g, '');
+              
+              if (digitsOnly === '') {
+                setAmount('');
+                return;
+              }
+              
+              const numericValue = parseInt(digitsOnly, 10) / 100;
+              
+              if (numericValue <= 99999999.99) {
+                setAmount(numericValue.toFixed(2));
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Backspace') {
+                e.preventDefault();
+                const currentAmount = parseFloat(amount) || 0;
+                const cents = Math.floor(currentAmount * 100);
+                const newCents = Math.floor(cents / 10);
+                const newAmount = newCents / 100;
+                setAmount(newCents === 0 ? '' : newAmount.toFixed(2));
+              }
+            }}
             fullWidth
             autoFocus
+            InputProps={{
+              startAdornment: <InputAdornment position="start">₱</InputAdornment>,
+            }}
+            inputProps={{
+              inputMode: 'numeric',
+              style: { textAlign: 'right' }
+            }}
+            placeholder="0.00"
           />
           <TextField
             label="Enter Donation Intercession (Optional)"
@@ -854,7 +878,6 @@ const HomePageLoggedIn = ({ onLogout }) => {
             value={donationIntercession}
             onChange={(e) => setDonationIntercession(e.target.value)}
             fullWidth
-            autoFocus
           />
           <Button 
             variant="contained" 
@@ -923,63 +946,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
                 inputProps={{ min: 1 }}
                 required
               />
-              {/* Upload File */}
-              {/* <div className="upload-box">
-                <input
-                  onChange={handleChangeID}
-                  type="file"
-                  accept="image/*"
-                  style={{ display: "none" }}
-                  ref={hiddenInputRef1}
-                />
-
-                <div className="upload-content">
-                  <b>
-                    Upload Required Document Image:
-                  </b>
-                  <div className="preview-container">
-                    {isIDProcessing ? (
-                      <p>Processing...</p>
-                    ) : residentForm.id ? (
-                      <div className="flex flex-col items-center my-2 p-2 bg-white rounded-lg border">
-                        <img src={residentForm.id} className="upload-img" />
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center my-2 p-2 bg-white rounded-lg border">
-                        <BiSolidImageAlt className="w-6 h-6" />
-                        <p>Attach Image</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div 
-                    className="upload-picture-btn "
-                    style={{
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      alignItems: "center",
-                      width: "100%",
-                    }}
-                  >
-                    <button 
-                      onClick={handleUploadID} 
-                      className="upload-btn"
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        padding: "4px 8px",
-                        backgroundColor: "#E1D5B8",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontSize: "14px",
-                      }}
-                    >
-                      Upload <FiUpload style={{ marginLeft: "0.5rem" }} />
-                    </button>
-                  </div>
-                </div>
-              </div> */}
+              
               {/* More Requests */}
               {selectedSacrament === 'Wedding' ? (
                 <WeddingDocuments

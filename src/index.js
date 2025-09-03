@@ -7,24 +7,18 @@ import { AuthProvider } from './context/AuthContext';
 import { AdminAuthProvider } from './context/AdminAuthContext';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { GoogleReCaptchaProvider } from '@google-recaptcha/react';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <GoogleReCaptchaProvider type='v2-checkbox' siteKey='6LdcHaUrAAAAADufiifE-YT40qMI5nSltlXwLyPA'>
-        <AuthProvider>
-          <AdminAuthProvider>
-            <App />
-          </AdminAuthProvider>
-        </AuthProvider>
-      </GoogleReCaptchaProvider>
+      <AuthProvider>
+        <AdminAuthProvider>
+          <App />
+        </AdminAuthProvider>
+      </AuthProvider>
     </LocalizationProvider>
   </React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();

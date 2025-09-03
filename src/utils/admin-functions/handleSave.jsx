@@ -117,6 +117,8 @@ const handleSave = async ({
         // Handle updates
         console.log('Editing record:', editingRecord);
         console.log('Current form data:', formData);
+        
+        // Remove virtual user fields for all tables except user_tbl
         if ('user_firstname' in formData && selectedTable !== 'user_tbl') {
           delete formData.user_firstname;
         }
@@ -259,7 +261,16 @@ const handleSave = async ({
 
           setSuccess('User created successfully. An invite link has been sent to their email.');
         } else {
-          // Handle other tables
+          // Handle other tables - remove virtual fields before insertion
+          
+          // Remove virtual user fields for all tables except user_tbl
+          if ('user_firstname' in formData && selectedTable !== 'user_tbl') {
+            delete formData.user_firstname;
+          }
+          if ('user_lastname' in formData && selectedTable !== 'user_tbl') {
+            delete formData.user_lastname;
+          }
+
           const { error: insertError } = await supabase
             .from(selectedTable)
             .insert([formData]);
@@ -352,6 +363,8 @@ const handleSacramentSave = async ({
         // Handle updates
         console.log('Editing record:', editingRecord);
         console.log('Current form data:', formData);
+        
+        // Remove virtual user fields (these are for display only, not database fields)
         if ('user_firstname' in formData) {
           delete formData.user_firstname;
         }
@@ -713,7 +726,13 @@ const handleSacramentSave = async ({
           }
         }
 
-
+        // Remove virtual user fields before insertion
+        if ('user_firstname' in formData) {
+          delete formData.user_firstname;
+        }
+        if ('user_lastname' in formData) {
+          delete formData.user_lastname;
+        }
         
         // Handle other tables
         const { error: insertError } = await supabase

@@ -2678,12 +2678,43 @@ const AdminDashboard = () => {
                   <TextField
                     fullWidth
                     label="Amount"
-                    type="number"
-                    value={formData.donation_amount || ''}
-                    onChange={(e) => setFormData({ ...formData, donation_amount: parseFloat(e.target.value) || 0 })}
+                    value={formData.donation_amount ? formData.donation_amount.toFixed(2) : ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Remove any non-digit and non-decimal characters
+                      const numericValue = value.replace(/[^0-9.]/g, '');
+                      
+                      // Ensure only one decimal point
+                      const parts = numericValue.split('.');
+                      let formattedValue = parts[0];
+                      if (parts.length > 1) {
+                        // Limit to 2 decimal places
+                        formattedValue += '.' + parts[1].slice(0, 2);
+                      }
+                      
+                      // Convert to number and update state
+                      const finalValue = parseFloat(formattedValue) || 0;
+                      setFormData({ ...formData, donation_amount: finalValue });
+                    }}
+                    onBlur={(e) => {
+                      // Format to 2 decimal places on blur
+                      const value = parseFloat(e.target.value) || 0;
+                      setFormData({ ...formData, donation_amount: parseFloat(value.toFixed(2)) });
+                    }}
                     required
                     margin="dense"
                     InputLabelProps={{ shrink: true }}
+                    InputProps={{
+                      startAdornment: <InputAdornment position="start">₱</InputAdornment>,
+                    }}
+                    inputProps={{
+                      pattern: '[0-9]+(\\.[0-9]{0,2})?',
+                      inputMode: 'decimal',
+                      step: '0.01',
+                      min: '0',
+                      style: { textAlign: 'right' }
+                    }}
+                    placeholder="0.00"
                   />
                 </Grid>
                 <Grid item xs={12}>

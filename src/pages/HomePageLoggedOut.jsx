@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Box, Typography, Container, Grid, Card, CardContent, useTheme, useMediaQuery } from '@mui/material';
 import { ThemeProvider, createTheme, styled } from '@mui/material/styles';
@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import Chatbot from '../components/Chatbot.jsx';
 import isUserLoggedIn from '../utils/isUserLoggedIn.jsx';
 
-// Create a theme instance
+// Create a theme instance outside component to prevent recreation
 const theme = createTheme({
   palette: {
     primary: {
@@ -37,17 +37,12 @@ const HeroSection = styled(Box)(({ theme }) => ({
   },
 }));
 
-const HeroContent = styled(Box)(({ theme }) => ({
-  position: 'relative',
-  zIndex: 2,
-  padding: theme.spacing(3),
-}));
-
 const FeatureCard = styled(Card)(({ theme }) => ({
   height: '100%',
   display: 'flex',
   flexDirection: 'column',
   transition: 'transform 0.3s ease-in-out',
+  cursor: 'pointer',
   '&:hover': {
     transform: 'translateY(-10px)',
   },
@@ -56,8 +51,8 @@ const FeatureCard = styled(Card)(({ theme }) => ({
 const HomePageLoggedOut = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
 
   // Navigation state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -66,54 +61,42 @@ const HomePageLoggedOut = () => {
   const [loginOpen, setLoginOpen] = useState(false);
   const [isSignupMode, setIsSignupMode] = useState(false);
 
-  // Check if user is logged in
-  // useEffect(() => {
-  //   async function checkLoginStatus() {
-  //     const isLoggedIn = await isUserLoggedIn();
-  //     console.log("Is user logged out? ", isLoggedIn);
-  //     if (isLoggedIn) {
-  //       navigate('/home');
-  //     }
-  //   }
-  //   checkLoginStatus();
-  // }, []);
-
-
-  // Navigation links configuration
-  const navLinks = [
-    { path: '/', label: 'HOME' },
-    { label: 'DONATE', action: () => handleRequireLogin() },
-    { label: 'BOOK A SERVICE', action: () => handleRequireLogin() },
-    { path: '/events', label: 'EVENTS' },
-    { label: 'BE A VOLUNTEER', action: () => handleRequireLogin() },
-    { path: '/explore-parish', label: 'VIRTUAL TOUR' }
-  ];
-
-  // Navigation handlers
-  const handleNavigation = (path) => {
+  // Memoized navigation handlers to prevent recreation on every render
+  const handleNavigation = useCallback((path) => {
     navigate(path);
     setMobileMenuOpen(false);
-  };
+  }, [navigate]);
 
-  const handleNavClick = (link) => {
+  const handleRequireLogin = useCallback((signup = false) => {
+    setIsSignupMode(signup);
+    setLoginOpen(true);
+  }, []);
+
+  const handleLoginSuccess = useCallback((userData) => {
+    login();
+    navigate('/home');
+  }, [login, navigate]);
+
+  const handleNavClick = useCallback((link) => {
     if (link.path) {
       handleNavigation(link.path);
     } else if (link.action) {
       link.action();
     }
-  };
+  }, [handleNavigation]);
 
-  const handleRequireLogin = (signup = false) => {
-    setIsSignupMode(signup);
-    setLoginOpen(true);
-  };
+  // Memoized navigation links to prevent recreation
+  const navLinks = useMemo(() => [
+    { path: '/', label: 'HOME', highlight: true },
+    { label: 'DONATE', action: () => handleRequireLogin() },
+    { label: 'BOOK A SERVICE', action: () => handleRequireLogin() },
+    { path: '/events', label: 'EVENTS' },
+    { label: 'BE A VOLUNTEER', action: () => handleRequireLogin() },
+    { path: '/explore-parish', label: 'VIRTUAL TOUR' }
+  ], [handleRequireLogin]);
 
-  const handleLoginSuccess = (userData) => {
-    login();
-    navigate('/home');
-  };
-
-  const features = [
+  // Memoized features to prevent recreation
+  const features = useMemo(() => [
     {
       title: 'Book Sacrament',
       description: 'Book your sacrament here.',
@@ -132,84 +115,164 @@ const HomePageLoggedOut = () => {
     {
       title: 'Virtual Tour',
       description: 'Explore our beautiful church through a virtual tour.',
-      action: () => handleNavigation('/explore-parish'), highlight: false
+      action: () => handleNavigation('/explore-parish')
     },
-  ];
+  ], [handleRequireLogin, handleNavigation]);
 
-  const onLoginClick = (isSignup) => {
-    setIsSignupMode(isSignup);
-    setLoginOpen(true);
-  };
+  // Cleanup function to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      setMobileMenuOpen(false);
+      setLoginOpen(false);
+    };
+  }, []);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (loginOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [loginOpen]);
 
   return (
     <ThemeProvider theme={theme}>
-      <div className="min-h-screen flex flex-col" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#fff' }}>
+      <div className="min-h-screen flex flex-col">
         {/* Header Section */}
-        <header className="bg-white shadow-md py-4 px-6">
-          <div className="flex justify-between items-center max-w-7xl mx-auto">
-            {/* Logo */}
-            <div className="flex items-center cursor-pointer" onClick={() => handleNavigation('/')}>
-              <img 
-                src="/images/sagrada.png" 
-                alt="Sagrada Familia Parish Logo" 
-                className="h-12 w-12 mr-2" 
-                style={{ background: 'transparent' }}
-              />
-              <span className="text-2xl font-bold text-[#E1D5B8]">SagradaGo</span>
+        <header className="bg-white shadow-lg border-b-2 border-[#E1D5B8]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              {/* Logo Section */}
+              <div 
+                className="flex items-center cursor-pointer group transition-transform duration-200 hover:scale-105" 
+                onClick={() => handleNavigation('/')}
+              >
+                <div className="relative">
+                  <img 
+                    src="/images/sagrada.png" 
+                    alt="Sagrada Familia Parish Logo" 
+                    className="h-10 w-10 mr-3 transition-transform duration-200 group-hover:rotate-3" 
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xl font-bold text-[#6B5F32] hidden sm:block">SagradaGo</span>
+                  <span className="text-xs text-gray-500 hidden sm:block">Parish Management</span>
+                </div>
+              </div>
+
+              {/* Desktop Navigation */}
+              <nav className="hidden lg:flex items-center space-x-1">
+                {navLinks.map((link) => (
+                  <button
+                    key={link.label}
+                    onClick={() => handleNavClick(link)}
+                    className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 group ${
+                      link.highlight 
+                        ? 'bg-[#E1D5B8] text-[#6B5F32] shadow-md' 
+                        : 'text-gray-700 hover:text-[#6B5F32] hover:bg-gray-50'
+                    }`}
+                  >
+                    {link.label}
+                    {!link.highlight && (
+                      <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-[#E1D5B8] transition-all duration-200 group-hover:w-full group-hover:left-0"></span>
+                    )}
+                  </button>
+                ))}
+              </nav>
+
+              {/* Authentication Buttons */}
+              <div className="flex items-center space-x-3">
+                <button 
+                  onClick={() => handleRequireLogin(false)}
+                  className="hidden lg:flex items-center px-4 py-2 text-sm font-medium text-white bg-[#6B5F32] rounded-lg hover:bg-[#5a5129] transition-colors duration-200 shadow-md hover:shadow-lg"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m0 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                  </svg>
+                  LOGIN
+                </button>
+                <button 
+                  onClick={() => handleRequireLogin(true)}
+                  className="hidden lg:flex items-center px-4 py-2 text-sm font-medium text-[#6B5F32] bg-[#E1D5B8] rounded-lg hover:bg-[#d4c4a1] transition-colors duration-200 shadow-md hover:shadow-lg"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                  </svg>
+                  JOIN NOW
+                </button>
+
+                {/* Mobile Menu Button */}
+                <button 
+                  className="lg:hidden p-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  aria-label="Toggle mobile menu"
+                >
+                  <div className="relative w-6 h-6">
+                    <span className={`absolute top-1 left-0 w-6 h-0.5 bg-[#6B5F32] transition-all duration-300 ${mobileMenuOpen ? 'rotate-45 top-3' : ''}`}></span>
+                    <span className={`absolute top-3 left-0 w-6 h-0.5 bg-[#6B5F32] transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-0' : 'opacity-100'}`}></span>
+                    <span className={`absolute top-5 left-0 w-6 h-0.5 bg-[#6B5F32] transition-all duration-300 ${mobileMenuOpen ? '-rotate-45 top-3' : ''}`}></span>
+                  </div>
+                </button>
+              </div>
             </div>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-6">
-              {navLinks.map((link) => (
-                <button
-                  key={link.label}
-                  onClick={() => handleNavClick(link)}
-                  className="text-black hover:text-[#E1D5B8] relative group transition-colors duration-200"
-                >
-                  {link.label}
-                </button>
-              ))}
-            </nav>
+            {/* Mobile Menu */}
+            <div className={`lg:hidden transition-all duration-300 ease-in-out ${mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
+              <div className="py-4 space-y-2 bg-gray-50 rounded-b-lg shadow-inner">
+                {navLinks.map((link) => (
+                  <button
+                    key={link.label}
+                    onClick={() => {
+                      handleNavClick(link);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 transition-colors duration-200 ${
+                      link.highlight 
+                        ? 'bg-[#E1D5B8] text-[#6B5F32] shadow-md' 
+                        : 'text-gray-700 hover:bg-white hover:text-[#6B5F32] hover:shadow-sm'
+                    }`}
+                  >
+                    <span className="w-2 h-2 bg-current rounded-full mr-3 opacity-60"></span>
+                    {link.label}
+                  </button>
+                ))}
+                
+                {/* Mobile Auth Buttons */}
+                <div className="border-t border-gray-200 pt-2 mt-2 mx-2">
+                  <button
+                    onClick={() => {
+                      handleRequireLogin(false);
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex items-center w-full px-4 py-3 text-left rounded-lg text-white bg-[#6B5F32] hover:bg-[#5a5129] transition-colors duration-200 mb-2"
+                  >
+                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m0 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    SIGN IN
+                  </button>
 
-            {/* Authentication Buttons */}
-            <div className="flex items-center space-x-4">
-              <button 
-                onClick={() => handleRequireLogin(false)}
-                className="px-4 py-2 bg-[#E1D5B8] text-text rounded hover:bg-opacity-90 text-sm sm:text-base"
-              >
-                LOGIN
-              </button>
-              <button 
-                onClick={() => handleRequireLogin(true)}
-                className="px-4 py-2 bg-[#E1D5B8] text-text rounded hover:bg-opacity-90 text-sm sm:text-base"
-              >
-                JOIN NOW
-              </button>
-
-              {/* Mobile Menu Toggle */}
-              <button 
-                className="md:hidden p-2 ml-2"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? '✕' : '☰'}
-              </button>
+                  <button
+                    onClick={() => {
+                      handleRequireLogin(true);
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex items-center w-full px-4 py-3 text-left rounded-lg text-[#6B5F32] bg-[#E1D5B8] hover:bg-[#d4c4a1] transition-colors duration-200"
+                  >
+                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                    </svg>
+                    JOIN NOW
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-
-          {/* Mobile Navigation */}
-          {mobileMenuOpen && (
-            <div className="md:hidden bg-white py-2 px-4 space-y-2 mt-2">
-              {navLinks.map((link) => (
-                <button
-                  key={link.label}
-                  onClick={() => handleNavClick(link)}
-                  className="block w-full text-left p-2 text-black hover:text-[#E1D5B8]"
-                >
-                  {link.label}
-                </button>
-              ))}
-            </div>
-          )}
         </header>
 
         {/* Main Content */}
@@ -333,7 +396,6 @@ const HomePageLoggedOut = () => {
         {/* Footer */}
         <footer className="bg-gradient-to-b from-white to-gray-50 text-black py-16 px-6">
           <div className="max-w-7xl mx-auto">
-            {/* Top Section with Logo and Description */}
             <div className="flex flex-col md:flex-row items-center justify-between mb-12 pb-8 border-b border-gray-200">
               <div className="flex items-center mb-6 md:mb-0">
                 <img 
@@ -362,14 +424,9 @@ const HomePageLoggedOut = () => {
               </div>
             </div>
 
-            {/* Main Content Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
-              {/* Quick Links */}
               <div>
-                <h4 className="text-lg font-semibold mb-6 text-[#6B5F32] relative inline-block">
-                  Quick Links
-                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#6B5F32] transform scale-x-0 transition-transform duration-300 group-hover:scale-x-100"></span>
-                </h4>
+                <h4 className="text-lg font-semibold mb-6 text-[#6B5F32]">Quick Links</h4>
                 <ul className="space-y-4">
                   <li>
                     <button 
@@ -401,15 +458,13 @@ const HomePageLoggedOut = () => {
                 </ul>
               </div>
 
-              {/* About Section */}
               <div>
                 <h4 className="text-lg font-semibold mb-6 text-[#6B5F32]">About Us</h4>
                 <p className="text-gray-600 text-sm leading-relaxed">
-                  Sagrada Go is a mobile and web-based appointment and record management system designed for Sagrada Familia Parish. It streamlines parish services by allowing users to schedule appointments, access records, and stay updated with church events—anytime, anywhere.
+                  Sagrada Go is a mobile and web-based appointment and record management system designed for Sagrada Familia Parish.
                 </p>
               </div>
 
-              {/* Contact Section */}
               <div>
                 <h4 className="text-lg font-semibold mb-6 text-[#6B5F32]">Contact Us</h4>
                 <ul className="space-y-4">
@@ -418,13 +473,12 @@ const HomePageLoggedOut = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                     </svg>
-                    <span className="text-gray-600">Sagrada Familia Parish, Sanctuary of the Holy Face of Manoppello, Manila, Philippines</span>
+                    <span className="text-gray-600">Sagrada Familia Parish, Manila, Philippines</span>
                   </li>
                 </ul>
               </div>
             </div>
 
-            {/* Bottom Section */}
             <div className="pt-8 border-t border-gray-200">
               <div className="flex flex-col md:flex-row justify-between items-center">
                 <p className="text-gray-500 text-sm mb-4 md:mb-0">
@@ -441,6 +495,7 @@ const HomePageLoggedOut = () => {
         {/* Login/Signup Modal */}
         {loginOpen && (
           <LoginModal
+            open={loginOpen}
             onClose={() => setLoginOpen(false)}
             onLoginSuccess={handleLoginSuccess}
             isSignupMode={isSignupMode}
