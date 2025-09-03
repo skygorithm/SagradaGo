@@ -17,6 +17,7 @@ import saveSpecificSacramentDocument from '../utils/form-functions/saveSpecificS
 import weddingFormValidation from '../utils/form-validations/weddingFormValidation.jsx';
 import saveWeddingDocument from '../utils/form-functions/saveWeddingDocument.jsx';
 import { getSacramentPrice } from '../information/getSacramentPrice.jsx';
+import LoginModal from '../config/UserAuth.jsx';
 
 const EventsPage = ({ onLogout }) => {
   const navigate = useNavigate();
@@ -32,6 +33,10 @@ const EventsPage = ({ onLogout }) => {
   const [bookingOpen, setBookingOpen] = useState(false);
   const [volunteerOpen, setVolunteerOpen] = useState(false);
   const [isVolunteer, setIsVolunteer] = useState(false);
+
+  // Add login modal states
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [isSignupMode, setIsSignupMode] = useState(false);
 
   // Add donation states
   const [amount, setAmount] = useState('');
@@ -123,6 +128,18 @@ const EventsPage = ({ onLogout }) => {
       return () => clearTimeout(timer);
     }
   }, [errorMessage]);
+
+  // Add login handlers
+  const handleRequireLogin = (signup = false) => {
+    setIsSignupMode(signup);
+    setLoginOpen(true);
+  };
+
+  const handleLoginSuccess = (userData) => {
+    setLoginOpen(false);
+    // Refresh the page to update authentication state
+    window.location.reload();
+  };
 
   // Add donation handler
   const handleDonate = async () => {
@@ -626,17 +643,28 @@ const EventsPage = ({ onLogout }) => {
                 </div>
               )}
 
-              {/* Login Button - Show when not logged in */}
+              {/* Login and Join Buttons - Show when not logged in */}
               {!isLoading && !isLoggedIn && (
-                <button
-                  onClick={() => navigate('/login')}
-                  className="hidden lg:flex items-center px-4 py-2 text-sm font-medium text-white bg-[#6B5F32] rounded-lg hover:bg-[#5a4d2a] transition-colors duration-200 shadow-md hover:shadow-lg"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-                  </svg>
-                  SIGN IN
-                </button>
+                <div className="hidden lg:flex items-center space-x-2">
+                  <button
+                    onClick={() => handleRequireLogin(false)}
+                    className="flex items-center px-4 py-2 text-sm font-medium text-white bg-[#6B5F32] rounded-lg hover:bg-[#5a4d2a] transition-colors duration-200 shadow-md hover:shadow-lg"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                    </svg>
+                    LOGIN
+                  </button>
+                  <button
+                    onClick={() => handleRequireLogin(true)}
+                    className="flex items-center px-4 py-2 text-sm font-medium text-[#6B5F32] bg-[#E1D5B8] rounded-lg hover:bg-[#d1c5a8] transition-colors duration-200 shadow-md hover:shadow-lg"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                    </svg>
+                    JOIN NOW
+                  </button>
+                </div>
               )}
 
               {/* Mobile Menu Button */}
@@ -706,20 +734,34 @@ const EventsPage = ({ onLogout }) => {
                 </button>
               )}
 
-              {/* Mobile Login Button - Show when not logged in */}
+              {/* Mobile Login and Join Buttons - Show when not logged in */}
               {!isLoading && !isLoggedIn && (
-                <button
-                  onClick={() => {
-                    navigate('/login');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 text-[#6B5F32] hover:bg-white hover:shadow-sm transition-colors duration-200"
-                >
-                  <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-                  </svg>
-                  SIGN IN
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      handleRequireLogin(false);
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 text-[#6B5F32] hover:bg-white hover:shadow-sm transition-colors duration-200"
+                  >
+                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                    </svg>
+                    LOGIN
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleRequireLogin(true);
+                      setMobileMenuOpen(false);
+                    }}
+                    className="flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 text-[#6B5F32] hover:bg-white hover:shadow-sm transition-colors duration-200"
+                  >
+                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                    </svg>
+                    JOIN NOW
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -1018,6 +1060,16 @@ const EventsPage = ({ onLogout }) => {
             <Button onClick={() => { setShowLogoutConfirm(false); onLogout(); }} autoFocus sx={{ color: '#6B5F32' }}>Yes</Button>
           </DialogActions>
         </Dialog>
+      )}
+
+      {/* Login/Signup Modal */}
+      {loginOpen && (
+        <LoginModal
+          open={loginOpen}
+          onClose={() => setLoginOpen(false)}
+          onLoginSuccess={handleLoginSuccess}
+          isSignupMode={isSignupMode}
+        />
       )}
 
       {/* Footer */}

@@ -1112,9 +1112,9 @@ const LoginModal = ({
         fontSize: '1.5rem',
         fontWeight: 'bold'
       }}>
-        {showVerificationMessage ? '✅ Email Verification Required' : 
-         showForgotPasswordMessage ? '🔑 Forgot Password' :
-         showLoginForm ? '🔐 Welcome Back' : '🎉 Join Our Community'}
+        {showVerificationMessage ? 'Email Verification Required' : 
+         showForgotPasswordMessage ? 'Forgot Password' :
+         showLoginForm ? 'Welcome Back' : 'Join Our Community'}
       </DialogTitle>
       
       <DialogContent sx={{ px: 4, py: 3 }}>
@@ -1249,14 +1249,14 @@ const LoginModal = ({
                     sx={{ 
                       mt: 2, 
                       py: 1.5,
-                      bgcolor: '#6B5F32', 
+                      bgcolor: '#d4c4a1', 
                       '&:hover': { bgcolor: '#5a5129' },
                       borderRadius: 2,
                       fontSize: '1.1rem',
                       fontWeight: 'bold'
                     }}
                   >
-                    {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : '🔐 Sign In'}
+                    {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Sign In'}
                   </Button>
                 </Grid>
               </Grid>
@@ -1348,7 +1348,7 @@ const LoginModal = ({
                 sx={{ color: '#6B5F32', '&:hover': { bgcolor: '#f5f5f5' } }} 
                 disabled={loading}
               >
-                🔑 Forgot Password?
+                Forgot Password?
               </Button>
               <Button 
                 onClick={toggleForm} 
