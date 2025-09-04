@@ -29,6 +29,7 @@ const ALLOWED_ORIGINS = new Set([
   'http://localhost:3000',
   'http://localhost:5173',
   'https://sagradago.onrender.com',
+  'http://sagradago.onrender.com',  // Added for fallback/redirect handling
   'https://sagradago.online',
   'https://www.sagradago.online',
   'https://sagradago.netlify.app',
@@ -81,12 +82,29 @@ const corsOptions = {
 // Enable CORS with our configuration
 app.use(cors(corsOptions));
 
+// ===== Force HTTPS in Production =====
+app.use((req, res, next) => {
+  // Check if we're in production and the request is HTTP
+  if (process.env.NODE_ENV === 'production' && req.header('x-forwarded-proto') !== 'https') {
+    console.log(`🔒 [HTTPS REDIRECT] Redirecting HTTP to HTTPS: ${req.url}`);
+    return res.redirect(301, `https://${req.header('host')}${req.url}`);
+  }
+  next();
+});
+
 // Add security headers
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  
+  // Enhanced HSTS for production
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  } else {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  
   next();
 });
 
@@ -139,6 +157,7 @@ app.use('/api', (req, res, next) => {
   console.log(`  Referer: ${req.headers.referer || 'Not provided'}`);
   console.log(`  User-Agent: ${req.headers['user-agent'] || 'Not provided'}`);
   console.log(`  Content-Type: ${req.headers['content-type'] || 'Not provided'}`);
+  console.log(`  X-Forwarded-Proto: ${req.headers['x-forwarded-proto'] || 'Not provided'}`);
   
   // Log if this looks like a CORS preflight
   if (req.method === 'OPTIONS') {
@@ -346,6 +365,7 @@ app.get('/api/health', async (req, res) => {
   console.log('  - Origin header:', req.headers.origin || 'Not provided');
   console.log('  - User-Agent:', req.headers['user-agent'] || 'Not provided');
   console.log('  - Protocol:', req.protocol);
+  console.log('  - X-Forwarded-Proto:', req.headers['x-forwarded-proto'] || 'Not provided');
   console.log('  - URL:', req.url);
   console.log('  - Method:', req.method);
   
@@ -381,6 +401,7 @@ app.get('/api/health', async (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     serverHost: req.headers.host,
     serverUrl: `${req.protocol}://${req.headers.host}`,
+    httpsEnabled: req.headers['x-forwarded-proto'] === 'https' || req.protocol === 'https',
     // Add diagnostic info
     diagnostics: {
       corsOrigins: Array.from(ALLOWED_ORIGINS),
@@ -573,6 +594,7 @@ const startServer = async () => {
       console.log(`Server running on port ${port}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`Health check: http://localhost:${port}/api/health`);
+      console.log(`HTTPS redirect: ${process.env.NODE_ENV === 'production' ? 'ENABLED' : 'DISABLED'}`);
 
       // Skip API test in production to speed up startup
       const isProduction = process.env.NODE_ENV === 'production';

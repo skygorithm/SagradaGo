@@ -456,11 +456,11 @@ const HomePageLoggedIn = ({ onLogout }) => {
                 <img 
                   src="/images/sagrada.png" 
                   alt="Sagrada Familia Parish Logo" 
-                  className="h-10 w-10 mr-3 transition-transform duration-200 group-hover:rotate-3" 
+                  className="h-8 w-8 sm:h-10 sm:w-10 mr-2 sm:mr-3 transition-transform duration-200 group-hover:rotate-3" 
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-[#6B5F32] hidden sm:block">SagradaGo</span>
+                <span className="text-lg sm:text-xl font-bold text-[#6B5F32] hidden sm:block">SagradaGo</span>
                 <span className="text-xs text-gray-500 hidden sm:block">Parish Management</span>
               </div>
             </div>
@@ -471,7 +471,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
                 <button
                   key={link.label}
                   onClick={link.action}
-                  className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 group ${
+                  className={`relative px-3 xl:px-4 py-2 rounded-lg text-xs xl:text-sm font-medium transition-all duration-200 group ${
                     link.highlight 
                       ? 'bg-[#E1D5B8] text-[#6B5F32] shadow-md' 
                       : 'text-gray-700 hover:text-[#6B5F32] hover:bg-gray-50'
@@ -486,13 +486,13 @@ const HomePageLoggedIn = ({ onLogout }) => {
             </nav>
 
             {/* Right Section - Logout and Profile */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               {/* Desktop Logout Button */}
               <button
                 onClick={() => setShowLogoutConfirm(true)}
-                className="hidden lg:flex items-center px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors duration-200 shadow-md hover:shadow-lg"
+                className="hidden lg:flex items-center px-3 xl:px-4 py-2 text-xs xl:text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors duration-200 shadow-md hover:shadow-lg"
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 xl:w-4 h-3 xl:h-4 mr-1 xl:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                 </svg>
                 SIGN OUT
@@ -511,10 +511,10 @@ const HomePageLoggedIn = ({ onLogout }) => {
                     <img
                       src="/images/wired-outline-21-avatar-hover-jumping.webp"
                       alt="Profile"
-                      className="w-10 h-10 rounded-full border-2 border-[#E1D5B8] transition-all duration-200 group-hover:border-[#6B5F32] group-hover:shadow-lg"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-[#E1D5B8] transition-all duration-200 group-hover:border-[#6B5F32] group-hover:shadow-lg"
                       style={{ objectFit: 'cover' }}
                     />
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full"></div>
+                    <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-400 border-2 border-white rounded-full"></div>
                   </div>
                 </button>
 
@@ -527,7 +527,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
                       navigate('/profile');
                       setProfileDropdownOpen(false);
                     }}
-                    className="flex items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-[#6B5F32] transition-colors duration-200"
+                    className="flex items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-[#6B5F32] transition-colors duration-200 text-sm"
                   >
                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -540,7 +540,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
                       setShowLogoutConfirm(true);
                       setProfileDropdownOpen(false);
                     }}
-                    className="flex items-center w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 transition-colors duration-200"
+                    className="flex items-center w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 transition-colors duration-200 text-sm"
                   >
                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -566,7 +566,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
 
           {/* Mobile Menu */}
           <div className={`lg:hidden transition-all duration-300 ease-in-out ${mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-            <div className="py-4 space-y-2 bg-gray-50 rounded-b-lg shadow-inner">
+            <div className="py-4 space-y-1 bg-gray-50 rounded-b-lg shadow-inner">
               {navLinks.map((link) => (
                 <button
                   key={link.label}
@@ -574,13 +574,12 @@ const HomePageLoggedIn = ({ onLogout }) => {
                     link.action();
                     setMobileMenuOpen(false);
                   }}
-                  className={`flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 transition-colors duration-200 ${
+                  className={`flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 transition-colors duration-200 text-sm font-medium ${
                     link.highlight 
                       ? 'bg-[#E1D5B8] text-[#6B5F32] shadow-md' 
                       : 'text-gray-700 hover:bg-white hover:text-[#6B5F32] hover:shadow-sm'
                   }`}
                 >
-                  <span className="w-2 h-2 bg-current rounded-full mr-3 opacity-60"></span>
                   {link.label}
                 </button>
               ))}
@@ -591,7 +590,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
                   navigate('/profile');
                   setMobileMenuOpen(false);
                 }}
-                className="flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 text-gray-700 hover:bg-white hover:text-[#6B5F32] hover:shadow-sm transition-colors duration-200"
+                className="flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 text-gray-700 hover:bg-white hover:text-[#6B5F32] hover:shadow-sm transition-colors duration-200 text-sm"
               >
                 <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -605,9 +604,9 @@ const HomePageLoggedIn = ({ onLogout }) => {
                   setShowLogoutConfirm(true);
                   setMobileMenuOpen(false);
                 }}
-                className="flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 text-red-600 hover:bg-red-50 transition-colors duration-200"
+                className="flex items-center justify-center w-full px-4 py-3 text-center rounded-lg mx-2 text-white bg-red-500 hover:bg-red-600 transition-colors duration-200 text-sm font-medium"
               >
-                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                 </svg>
                 LOGOUT
@@ -620,7 +619,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
       {/* Main Content */}
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="relative h-[70vh] min-h-[500px] w-full overflow-hidden">
+        <section className="relative h-[60vh] sm:h-[70vh] min-h-[400px] sm:min-h-[500px] w-full overflow-hidden">
           <img 
             src="/images/SAGRADA-FAMILIA-PARISH.jpg"
             alt="Church Community"
@@ -628,19 +627,19 @@ const HomePageLoggedIn = ({ onLogout }) => {
           />
           <div className="absolute inset-0 bg-black bg-opacity-40"></div>
           <div className="relative h-full flex items-center">
-            <div className="container mx-auto px-6">
+            <div className="container mx-auto px-4 sm:px-6">
               <div className="max-w-2xl text-white">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
                   Simplifying Church <br />
                   Management & Engagement
                 </h1>
-                <p className="text-lg md:text-xl mb-8">
+                <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 leading-relaxed">
                   The Society has built a new, mature, strategic structure, and kept up-to-date
                   with success across all the past year
                 </p>
                 <button 
                   onClick={() => setBookingOpen(true)}
-                  className="px-8 py-3 bg-[#E1D5B8] text-black rounded-lg hover:bg-opacity-90 text-lg transition-all hover:scale-105"
+                  className="px-6 sm:px-8 py-2.5 sm:py-3 bg-[#E1D5B8] text-black rounded-lg hover:bg-opacity-90 text-base sm:text-lg transition-all hover:scale-105 font-medium"
                 >
                   Book now
                 </button>
@@ -650,26 +649,44 @@ const HomePageLoggedIn = ({ onLogout }) => {
         </section>
 
         {/* Features/Services Section */}
-        <section className="py-8">
-          <Box maxWidth="lg" sx={{ mx: 'auto' }}>
+        <section className="py-6 sm:py-8">
+          <Box maxWidth="lg" sx={{ mx: 'auto', px: { xs: 2, sm: 3 } }}>
             <Typography
               variant="h3"
               component="h2"
               align="center"
               gutterBottom
-              sx={{ color: '#333', mb: 6, fontWeight: 'bold' }}
+              sx={{ 
+                color: '#333', 
+                mb: { xs: 4, sm: 6 }, 
+                fontWeight: 'bold',
+                fontSize: { xs: '1.75rem', sm: '2.25rem', md: '3rem' }
+              }}
             >
               Our Services
             </Typography>
-            <Grid container spacing={4}>
+            <Grid container spacing={{ xs: 2, sm: 3, md: 4 }}>
               {features.map((feature, index) => (
                 <Grid item xs={12} sm={6} md={3} key={index}>
                   <FeatureCard onClick={feature.action}>
-                    <CardContent sx={{ flexGrow: 1, bgcolor: 'white' }}>
-                      <Typography gutterBottom variant="h5" component="h3" sx={{ color: '#6B5F32', fontWeight: 'bold' }}>
+                    <CardContent sx={{ flexGrow: 1, bgcolor: 'white', p: { xs: 2, sm: 3 } }}>
+                      <Typography 
+                        gutterBottom 
+                        variant="h5" 
+                        component="h3" 
+                        sx={{ 
+                          color: '#6B5F32', 
+                          fontWeight: 'bold',
+                          fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                        }}
+                      >
                         {feature.title}
                       </Typography>
-                      <Typography variant="body1" color="text.secondary">
+                      <Typography 
+                        variant="body1" 
+                        color="text.secondary"
+                        sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+                      >
                         {feature.description}
                       </Typography>
                     </CardContent>
@@ -681,14 +698,19 @@ const HomePageLoggedIn = ({ onLogout }) => {
         </section>
 
         {/* Join Community Section */}
-        <section className="py-8 bg-gray-100">
-          <Box maxWidth="md" sx={{ mx: 'auto' }}>
+        <section className="py-6 sm:py-8 bg-gray-100">
+          <Box maxWidth="md" sx={{ mx: 'auto', px: { xs: 2, sm: 3 } }}>
             <Typography
               variant="h3"
               component="h2"
               align="center"
               gutterBottom
-              sx={{ color: '#333', mb: 4, fontWeight: 'bold' }}
+              sx={{ 
+                color: '#333', 
+                mb: { xs: 3, sm: 4 }, 
+                fontWeight: 'bold',
+                fontSize: { xs: '1.75rem', sm: '2.25rem', md: '3rem' }
+              }}
             >
               Join Our Community
             </Typography>
@@ -697,7 +719,11 @@ const HomePageLoggedIn = ({ onLogout }) => {
               align="center"
               color="text.secondary"
               paragraph
-              sx={{ mb: 4 }}
+              sx={{ 
+                mb: { xs: 3, sm: 4 },
+                fontSize: { xs: '1rem', sm: '1.25rem' },
+                lineHeight: 1.6
+              }}
             >
               Be part of our growing parish family. Connect with fellow parishioners,
               participate in church activities, and strengthen your faith journey with us.
@@ -707,7 +733,14 @@ const HomePageLoggedIn = ({ onLogout }) => {
                 variant="contained"
                 size="large"
                 onClick={() => setVolunteerOpen(true)}
-                sx={{ bgcolor: '#E1D5B8', color: 'black', px: 4, py: 1.5, fontSize: '1.1rem', '&:hover': { bgcolor: '#d4c4a1' } }}
+                sx={{ 
+                  bgcolor: '#E1D5B8', 
+                  color: 'black', 
+                  px: { xs: 3, sm: 4 }, 
+                  py: { xs: 1.2, sm: 1.5 }, 
+                  fontSize: { xs: '1rem', sm: '1.1rem' }, 
+                  '&:hover': { bgcolor: '#d4c4a1' } 
+                }}
               >
                 Become a Volunteer
               </Button>
@@ -717,19 +750,19 @@ const HomePageLoggedIn = ({ onLogout }) => {
       </main>
 
       {/* Footer Section */}
-      <footer className="bg-gradient-to-b from-white to-gray-50 text-black py-16 px-6">
+      <footer className="bg-gradient-to-b from-white to-gray-50 text-black py-12 sm:py-16 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           {/* Top Section with Logo and Description */}
-          <div className="flex flex-col md:flex-row items-center justify-between mb-12 pb-8 border-b border-gray-200">
+          <div className="flex flex-col md:flex-row items-center justify-between mb-8 sm:mb-12 pb-6 sm:pb-8 border-b border-gray-200">
             <div className="flex items-center mb-6 md:mb-0">
               <img 
                 src="/images/sagrada.png" 
                 alt="SagradaGo Logo" 
-                className="h-16 w-auto mr-4" 
+                className="h-12 sm:h-16 w-auto mr-3 sm:mr-4" 
               />
               <div>
-                <span className="text-3xl font-bold text-[#6B5F32]">SagradaGo</span>
-                <p className="text-sm text-gray-600 mt-2 max-w-md">
+                <span className="text-2xl sm:text-3xl font-bold text-[#6B5F32]">SagradaGo</span>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 max-w-md">
                   A digital gateway to Sagrada Familia Parish, connecting faith and community through modern technology.
                 </p>
               </div>
@@ -739,9 +772,9 @@ const HomePageLoggedIn = ({ onLogout }) => {
                 href="https://www.facebook.com/sfpsanctuaryoftheholyfaceofmanoppello"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-[#6B5F32] p-3 rounded-full hover:bg-[#d1c5a8] transition-colors duration-200"
+                className="bg-[#6B5F32] p-2.5 sm:p-3 rounded-full hover:bg-[#d1c5a8] transition-colors duration-200"
               >
-                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 sm:w-6 h-5 sm:h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M18.77 7.46H14.5v-1.9c0-.9.6-1.1 1-1.1h3V.5h-4.33C10.24.5 9.5 3.44 9.5 5.32v2.15h-3v4h3v12h5v-12h3.85l.42-4z"/>
                 </svg>
               </a>
@@ -749,18 +782,18 @@ const HomePageLoggedIn = ({ onLogout }) => {
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 sm:gap-12 mb-8 sm:mb-12">
             {/* Quick Links */}
             <div>
-              <h4 className="text-lg font-semibold mb-6 text-[#6B5F32] relative inline-block">
+              <h4 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6 text-[#6B5F32] relative inline-block">
                 Quick Links
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#6B5F32] transform scale-x-0 transition-transform duration-300 group-hover:scale-x-100"></span>
               </h4>
-              <ul className="space-y-4">
+              <ul className="space-y-3 sm:space-y-4">
                 <li>
                   <button 
                     onClick={() => handleNavigation('/home')}
-                    className="text-gray-600 hover:text-[#6B5F32] transition-colors duration-200 flex items-center"
+                    className="text-gray-600 hover:text-[#6B5F32] transition-colors duration-200 flex items-center text-sm sm:text-base"
                   >
                     <span className="mr-2">→</span>
                     Home
@@ -769,7 +802,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
                 <li>
                   <button 
                     onClick={() => handleNavigation('/events')}
-                    className="text-gray-600 hover:text-[#6B5F32] transition-colors duration-200 flex items-center"
+                    className="text-gray-600 hover:text-[#6B5F32] transition-colors duration-200 flex items-center text-sm sm:text-base"
                   >
                     <span className="mr-2">→</span>
                     Events
@@ -778,7 +811,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
                 <li>
                   <button 
                     onClick={() => handleNavigation('/explore-parish')}
-                    className="text-gray-600 hover:text-[#6B5F32] transition-colors duration-200 flex items-center"
+                    className="text-gray-600 hover:text-[#6B5F32] transition-colors duration-200 flex items-center text-sm sm:text-base"
                   >
                     <span className="mr-2">→</span>
                     Virtual Tour
@@ -789,34 +822,34 @@ const HomePageLoggedIn = ({ onLogout }) => {
 
             {/* About Section */}
             <div>
-              <h4 className="text-lg font-semibold mb-6 text-[#6B5F32]">About Us</h4>
-              <p className="text-gray-600 text-sm leading-relaxed">
+              <h4 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6 text-[#6B5F32]">About Us</h4>
+              <p className="text-gray-600 text-xs sm:text-sm leading-relaxed">
                 Sagrada Go is a mobile and web-based appointment and record management system designed for Sagrada Familia Parish. It streamlines parish services by allowing users to schedule appointments, access records, and stay updated with church events—anytime, anywhere.
               </p>
             </div>
 
             {/* Contact Section */}
             <div>
-              <h4 className="text-lg font-semibold mb-6 text-[#6B5F32]">Contact Us</h4>
-              <ul className="space-y-4">
+              <h4 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6 text-[#6B5F32]">Contact Us</h4>
+              <ul className="space-y-3 sm:space-y-4">
                 <li className="flex items-start">
-                  <svg className="w-5 h-5 text-[#6B5F32] mr-3 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 sm:w-5 h-4 sm:h-5 text-[#6B5F32] mr-2 sm:mr-3 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                   </svg>
-                  <span className="text-gray-600">Sagrada Familia Parish, Sanctuary of the Holy Face of Manoppello, Manila, Philippines</span>
+                  <span className="text-gray-600 text-xs sm:text-sm">Sagrada Familia Parish, Sanctuary of the Holy Face of Manoppello, Manila, Philippines</span>
                 </li>
               </ul>
             </div>
           </div>
 
           {/* Bottom Section */}
-          <div className="pt-8 border-t border-gray-200">
+          <div className="pt-6 sm:pt-8 border-t border-gray-200">
             <div className="flex flex-col md:flex-row justify-between items-center">
-              <p className="text-gray-500 text-sm mb-4 md:mb-0">
+              <p className="text-gray-500 text-xs sm:text-sm mb-4 md:mb-0 text-center md:text-left">
                 © 2025 Sagrada Familia Parish. All rights reserved.
               </p>
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-500 text-xs sm:text-sm text-center md:text-right">
                 Designed and Developed by Group 2 – Sagrada Go Capstone Team
               </p>
             </div>
