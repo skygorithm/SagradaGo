@@ -141,6 +141,8 @@ const EventsPage = ({ onLogout }) => {
     window.location.reload();
   };
 
+  
+
   // Add donation handler
   const handleDonate = async () => {
     const parsedAmount = parseFloat(amount);
@@ -668,54 +670,64 @@ const EventsPage = ({ onLogout }) => {
               )}
 
               {/* Mobile Menu Button */}
-              <button 
-                className="lg:hidden p-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                <div className="relative w-6 h-6">
-                  <span className={`absolute top-1 left-0 w-6 h-0.5 bg-[#6B5F32] transition-all duration-300 ${mobileMenuOpen ? 'rotate-45 top-3' : ''}`}></span>
-                  <span className={`absolute top-3 left-0 w-6 h-0.5 bg-[#6B5F32] transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-0' : 'opacity-100'}`}></span>
-                  <span className={`absolute top-5 left-0 w-6 h-0.5 bg-[#6B5F32] transition-all duration-300 ${mobileMenuOpen ? '-rotate-45 top-3' : ''}`}></span>
-                </div>
-              </button>
+                <button 
+                  className="md:hidden p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200 relative z-10 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMobileMenuOpen(!mobileMenuOpen);
+                  }}
+                  aria-label="Toggle mobile menu"
+                >
+                  <div className="relative w-6 h-6 flex flex-col justify-center">
+                    <span className={`absolute left-0 w-6 h-0.5 bg-[#6B5F32] transition-all duration-300 ease-in-out ${
+                      mobileMenuOpen ? 'rotate-45 translate-y-0' : '-translate-y-2'
+                    }`}></span>
+                    <span className={`absolute left-0 w-6 h-0.5 bg-[#6B5F32] transition-all duration-300 ease-in-out ${
+                      mobileMenuOpen ? 'opacity-0 scale-0' : 'opacity-100 scale-100'
+                    }`}></span>
+                    <span className={`absolute left-0 w-6 h-0.5 bg-[#6B5F32] transition-all duration-300 ease-in-out ${
+                      mobileMenuOpen ? '-rotate-45 translate-y-0' : 'translate-y-2'
+                    }`}></span>
+                  </div>
+                </button>
+              </div>
             </div>
-          </div>
 
           {/* Mobile Menu */}
-          <div className={`lg:hidden transition-all duration-300 ease-in-out ${mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-            <div className="py-4 space-y-1 bg-gray-50 rounded-b-lg shadow-inner">
-              {navLinks.map((link) => (
-                <button
-                  key={link.label}
-                  onClick={() => {
-                    protectedNavClick(link.action);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 transition-colors duration-200 text-sm font-medium ${
-                    activeNav === link.key
-                      ? 'bg-[#E1D5B8] text-[#6B5F32] shadow-md' 
-                      : 'text-gray-700 hover:bg-white hover:text-[#6B5F32] hover:shadow-sm'
-                  }`}
-                >
-                  {link.label}
-                </button>
-              ))}
+            <div className={`md:hidden transition-all duration-300 ease-in-out ${mobileMenuOpen ? 'max-h-[500px] opacity-100 pb-4' : 'max-h-0 opacity-0 pb-0'} overflow-hidden`}>
+              <div className="pt-2 space-y-1 bg-gray-50 rounded-lg shadow-inner mx-2">
+                {navLinks.map((link) => (
+                  <button
+                    key={link.label}
+                    onClick={() => {
+                      protectedNavClick(link.action);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 transition-colors duration-200 text-sm font-medium ${
+                      link.highlight 
+                        ? 'bg-[#E1D5B8] text-[#6B5F32] shadow-md' 
+                        : 'text-gray-700 hover:bg-white hover:text-[#6B5F32] hover:shadow-sm'
+                    }`}
+                  >
+                    {link.label}
+                  </button>
+                ))}
               
               {/* Mobile Profile Link - Only show when logged in */}
               {!isLoading && isLoggedIn && (
-                <button
+              <button
                   onClick={() => {
                     navigate('/profile');
                     setMobileMenuOpen(false);
                   }}
-                  className="flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 text-gray-700 hover:bg-white hover:text-[#6B5F32] hover:shadow-sm transition-colors duration-200 text-sm"
+                  className="flex items-center w-full px-5 py-4 text-left rounded-lg mx-2 text-gray-700 hover:bg-white hover:text-[#6B5F32] hover:shadow-sm transition-colors duration-200 text-sm"
                 >
-                  <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                   </svg>
                   Edit Profile
                 </button>
-              )}
+              )}  
 
               {/* Mobile Logout Button - Only show when logged in */}
               {!isLoading && isLoggedIn && (
@@ -741,19 +753,19 @@ const EventsPage = ({ onLogout }) => {
                       handleRequireLogin(false);
                       setMobileMenuOpen(false);
                     }}
-                    className="flex items-center justify-center w-full px-4 py-3 text-center rounded-lg mx-2 text-white bg-[#6B5F32] hover:bg-[#5a4d2a] transition-colors duration-200 text-sm font-medium"
+                    className="hidden md:flex items-center px-2 lg:px-3 xl:px-4 py-1.5 lg:py-2 text-xs lg:text-sm font-medium text-white bg-[#6B5F32] rounded-lg hover:bg-[#5a5129] transition-colors duration-200 shadow-md hover:shadow-lg whitespace-nowrap"
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
                     </svg>
-                    LOGIN
+                    SIGN IN
                   </button>
                   <button
                     onClick={() => {
                       handleRequireLogin(true);
                       setMobileMenuOpen(false);
                     }}
-                    className="flex items-center justify-center w-full px-4 py-3 text-center rounded-lg mx-2 text-[#6B5F32] bg-[#E1D5B8] hover:bg-[#d1c5a8] transition-colors duration-200 text-sm font-medium"
+                    className="hidden md:flex items-center px-2 lg:px-3 xl:px-4 py-1.5 lg:py-2 text-xs lg:text-sm font-medium text-[#6B5F32] bg-[#E1D5B8] rounded-lg hover:bg-[#d4c4a1] transition-colors duration-200 shadow-md hover:shadow-lg whitespace-nowrap"
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
