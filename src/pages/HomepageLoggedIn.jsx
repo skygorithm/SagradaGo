@@ -861,9 +861,12 @@ const HomePageLoggedIn = ({ onLogout }) => {
       <CardPopup 
         open={DonateOpen} 
         onClose={() => {
-        navigate('/home');
-        setDonateOpen(true);
-        setShowQRCode(false);
+          setDonateOpen(false);
+          setShowQRCode(false);
+          
+          setTimeout(() => {
+            navigate('/home');
+          }, 0);
         }} 
         title="Make a Donation"
       >
