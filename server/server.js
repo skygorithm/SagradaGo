@@ -51,12 +51,14 @@ app.use((req, res, next) => {
   
   next();
 });
+
 // Configure CORS
 const ALLOWED_ORIGINS = new Set([
   'http://localhost:3000',
   'http://localhost:5173',
   'https://sagradago.online',
-  'https://www.sagradago.online',
+  'www.sagradago.online',
+  'sagradago.online',
   'https://sagradago.netlify.app',
   'http://localhost:5001',
   'http://localhost:5000'
@@ -67,7 +69,7 @@ const corsOptions = {
     const isProduction = process.env.NODE_ENV === 'production';
     
     console.log('🌐 [CORS CHECK] Processing request:');
-    console.log(`  Origin: ${origin || 'null/undefined'}`);
+   console.log(`  Origin: ${origin || 'null/undefined'}`);
     console.log(`  Environment: ${isProduction ? 'production' : 'development'}`);
     console.log(`  Allowed origins: ${Array.from(ALLOWED_ORIGINS).join(', ')}`);
 
@@ -79,7 +81,7 @@ const corsOptions = {
     }
     
     if (ALLOWED_ORIGINS.has(origin)) {
-      console.log(' [CORS CHECK]  Origin allowed origin', origin);
+      console.log('🌐 [CORS CHECK] ✅ Origin allowed');
       callback(null, true);
     } else {
       console.log('🌐 [CORS CHECK] ❌ Origin blocked:', origin);
