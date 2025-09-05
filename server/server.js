@@ -79,7 +79,7 @@ const corsOptions = {
     }
     
     if (ALLOWED_ORIGINS.has(origin)) {
-      console.log('🌐 [CORS CHECK] ✅ Origin allowed:', origin);
+      console.log(' [CORS CHECK]  Origin allowed origin', origin);
       callback(null, true);
     } else {
       console.log('🌐 [CORS CHECK] ❌ Origin blocked:', origin);
