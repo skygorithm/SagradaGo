@@ -24,16 +24,42 @@ console.log('- reCAPTCHA Site Key:', process.env.RECAPTCHA_SITE_KEY ? 'Configure
 console.log('- reCAPTCHA Secret Key:', process.env.RECAPTCHA_SECRET_KEY ? 'Configured' : 'Not configured');
 
 // ===== Middleware Setup =====
+// Add security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // Content Security Policy
+  const csp = [
+    "default-src 'self'",
+    "connect-src 'self' https://generativelanguage.googleapis.com http://localhost:5001 https://sagradago.onrender.com https://*.supabase.co wss://*.supabase.co https://*.google.com https://www.google.com/recaptcha/",
+    "script-src 'self' 'unsafe-inline' https://www.google.com/recaptcha/",
+    "style-src 'self' 'unsafe-inline'",
+    "frame-src https://www.google.com/recaptcha/",
+    "img-src 'self' data:"
+  ].join('; ');
+  
+  res.setHeader('Content-Security-Policy', csp);
+
+  // Enhanced HSTS for production
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  } else {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  
+  next();
+});
 // Configure CORS
 const ALLOWED_ORIGINS = new Set([
   'http://localhost:3000',
   'http://localhost:5173',
-  'https://sagradago.onrender.com',
-  'http://sagradago.onrender.com',  // Added for fallback/redirect handling
   'https://sagradago.online',
   'https://www.sagradago.online',
   'https://sagradago.netlify.app',
-  'https://sagradago-backend.onrender.com'
+  'http://localhost:5001',
+  'http://localhost:5000'
 ]);
 
 const corsOptions = {

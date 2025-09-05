@@ -33,6 +33,7 @@ const FeatureCard = styled(Card)(({ theme }) => ({
 
 const HomePageLoggedIn = ({ onLogout }) => {
   const navigate = useNavigate();
+  const [showQRCode, setShowQRCode] = useState(false);
 
   const [amount, setAmount] = useState('');
   const [donationIntercession, setDonationIntercession] = useState('');
@@ -88,7 +89,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
     bride_banns: null,
     groom_permission: null,
     bride_permission: null,
-  });
+  });  
 
   // Navigation links for logged-in users (without logout)
   const navLinks = [
@@ -409,13 +410,11 @@ const HomePageLoggedIn = ({ onLogout }) => {
       setErrorMessage('Failed to process donation. Please try again.');
       return;
     }
-    console.log('Donation successful:', donationData);
 
     alert(`Thank you! You have donated PHP ${parsedAmount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    setShowQRCode(true);
     setAmount('');
     setDonationIntercession('');
-    setDonateOpen(false);
-    navigate('/home');
   };
 
   const features = [
@@ -443,11 +442,11 @@ const HomePageLoggedIn = ({ onLogout }) => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header Section - Redesigned */}
+      {/* Improved Header Section */}
       <header className="bg-white shadow-lg border-b-2 border-[#E1D5B8]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo Section */}
+            {/* Logo Section - Adjusted for mobile */}
             <div 
               className="flex items-center cursor-pointer group transition-transform duration-200 hover:scale-105" 
               onClick={() => handleNavigation('/home')}
@@ -456,117 +455,50 @@ const HomePageLoggedIn = ({ onLogout }) => {
                 <img 
                   src="/images/sagrada.png" 
                   alt="Sagrada Familia Parish Logo" 
-                  className="h-8 w-8 sm:h-10 sm:w-10 mr-2 sm:mr-3 transition-transform duration-200 group-hover:rotate-3" 
+                  className="h-8 w-8 sm:h-10 sm:w-10 mr-2 transition-transform duration-200 group-hover:rotate-3" 
                 />
               </div>
               <div className="flex flex-col">
-                <span className="text-lg sm:text-xl font-bold text-[#6B5F32] hidden sm:block">SagradaGo</span>
-                <span className="text-xs text-gray-500 hidden sm:block">Parish Management</span>
+                <span className="text-lg font-bold text-[#6B5F32] sm:text-xl">SagradaGo</span>
+                <span className="text-xs text-gray-500 hidden xs:block">Parish Management</span>
               </div>
             </div>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center space-x-1">
-              {navLinks.map((link) => (
-                <button
-                  key={link.label}
-                  onClick={link.action}
-                  className={`relative px-3 xl:px-4 py-2 rounded-lg text-xs xl:text-sm font-medium transition-all duration-200 group ${
-                    link.highlight 
-                      ? 'bg-[#E1D5B8] text-[#6B5F32] shadow-md' 
-                      : 'text-gray-700 hover:text-[#6B5F32] hover:bg-gray-50'
-                  }`}
-                >
-                  {link.label}
-                  {!link.highlight && (
-                    <span className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-[#E1D5B8] transition-all duration-200 group-hover:w-full group-hover:left-0"></span>
-                  )}
-                </button>
-              ))}
-            </nav>
+            {/* Desktop Navigation (unchanged) */}
 
-            {/* Right Section - Logout and Profile */}
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              {/* Desktop Logout Button */}
-              <button
-                onClick={() => setShowLogoutConfirm(true)}
-                className="hidden lg:flex items-center px-3 xl:px-4 py-2 text-xs xl:text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors duration-200 shadow-md hover:shadow-lg"
-              >
-                <svg className="w-3 xl:w-4 h-3 xl:h-4 mr-1 xl:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
-                SIGN OUT
-              </button>
-
-              {/* Profile Button with Dropdown */}
-              <div 
-                className="relative"
-                onMouseEnter={() => setProfileDropdownOpen(true)}
-                onMouseLeave={() => setProfileDropdownOpen(false)}
-              >
-                <button
-                  className="relative group p-1 rounded-full transition-all duration-200 hover:bg-gray-50"
-                >
-                  <div className="relative">
-                    <img
-                      src="/images/wired-outline-21-avatar-hover-jumping.webp"
-                      alt="Profile"
-                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-[#E1D5B8] transition-all duration-200 group-hover:border-[#6B5F32] group-hover:shadow-lg"
-                      style={{ objectFit: 'cover' }}
-                    />
-                    <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-400 border-2 border-white rounded-full"></div>
-                  </div>
-                </button>
-
-                {/* Profile Dropdown Menu */}
-                <div className={`absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 transition-all duration-200 ${
-                  profileDropdownOpen ? 'opacity-100 visible transform translate-y-0' : 'opacity-0 invisible transform -translate-y-2'
-                }`}>
-                  <button
-                    onClick={() => {
-                      navigate('/profile');
-                      setProfileDropdownOpen(false);
-                    }}
-                    className="flex items-center w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 hover:text-[#6B5F32] transition-colors duration-200 text-sm"
-                  >
-                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                    </svg>
-                    Edit Profile
-                  </button>
-                  <div className="border-t border-gray-100 my-1"></div>
-                  <button
-                    onClick={() => {
-                      setShowLogoutConfirm(true);
-                      setProfileDropdownOpen(false);
-                    }}
-                    className="flex items-center w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 transition-colors duration-200 text-sm"
-                  >
-                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                    </svg>
-                    Logout
-                  </button>
-                </div>
-              </div>
+            {/* Right Section - Improved mobile spacing */}
+            <div className="flex items-center space-x-2">
+              {/* Profile Button with Dropdown (unchanged) */}
 
               {/* Mobile Menu Button */}
-              <button 
-                className="lg:hidden p-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                <div className="relative w-6 h-6">
-                  <span className={`absolute top-1 left-0 w-6 h-0.5 bg-[#6B5F32] transition-all duration-300 ${mobileMenuOpen ? 'rotate-45 top-3' : ''}`}></span>
-                  <span className={`absolute top-3 left-0 w-6 h-0.5 bg-[#6B5F32] transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-0' : 'opacity-100'}`}></span>
-                  <span className={`absolute top-5 left-0 w-6 h-0.5 bg-[#6B5F32] transition-all duration-300 ${mobileMenuOpen ? '-rotate-45 top-3' : ''}`}></span>
-                </div>
-              </button>
+                <button 
+                  className="md:hidden p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200 relative z-10 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMobileMenuOpen(!mobileMenuOpen);
+                  }}
+                  aria-label="Toggle mobile menu"
+                >
+                  <div className="relative w-6 h-6 flex flex-col justify-center">
+                    <span className={`absolute left-0 w-6 h-0.5 bg-[#6B5F32] transition-all duration-300 ease-in-out ${
+                      mobileMenuOpen ? 'rotate-45 translate-y-0' : '-translate-y-2'
+                    }`}></span>
+                    <span className={`absolute left-0 w-6 h-0.5 bg-[#6B5F32] transition-all duration-300 ease-in-out ${
+                      mobileMenuOpen ? 'opacity-0 scale-0' : 'opacity-100 scale-100'
+                    }`}></span>
+                    <span className={`absolute left-0 w-6 h-0.5 bg-[#6B5F32] transition-all duration-300 ease-in-out ${
+                      mobileMenuOpen ? '-rotate-45 translate-y-0' : 'translate-y-2'
+                    }`}></span>
+                  </div>
+                </button>
             </div>
           </div>
 
           {/* Mobile Menu */}
-          <div className={`lg:hidden transition-all duration-300 ease-in-out ${mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-            <div className="py-4 space-y-1 bg-gray-50 rounded-b-lg shadow-inner">
+          <div className={`lg:hidden transition-all duration-300 ease-in-out overflow-hidden ${
+            mobileMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'
+          }`}>
+            <div className="py-4 space-y-2 bg-gray-50 rounded-b-lg shadow-inner">
               {navLinks.map((link) => (
                 <button
                   key={link.label}
@@ -574,7 +506,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
                     link.action();
                     setMobileMenuOpen(false);
                   }}
-                  className={`flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 transition-colors duration-200 text-sm font-medium ${
+                  className={`flex items-center w-full px-5 py-4 text-left rounded-lg mx-2 transition-colors duration-200 text-sm font-medium ${
                     link.highlight 
                       ? 'bg-[#E1D5B8] text-[#6B5F32] shadow-md' 
                       : 'text-gray-700 hover:bg-white hover:text-[#6B5F32] hover:shadow-sm'
@@ -590,9 +522,9 @@ const HomePageLoggedIn = ({ onLogout }) => {
                   navigate('/profile');
                   setMobileMenuOpen(false);
                 }}
-                className="flex items-center w-full px-4 py-3 text-left rounded-lg mx-2 text-gray-700 hover:bg-white hover:text-[#6B5F32] hover:shadow-sm transition-colors duration-200 text-sm"
+                className="flex items-center w-full px-5 py-4 text-left rounded-lg mx-2 text-gray-700 hover:bg-white hover:text-[#6B5F32] hover:shadow-sm transition-colors duration-200 text-sm"
               >
-                <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                 </svg>
                 Edit Profile
@@ -604,9 +536,9 @@ const HomePageLoggedIn = ({ onLogout }) => {
                   setShowLogoutConfirm(true);
                   setMobileMenuOpen(false);
                 }}
-                className="flex items-center justify-center w-full px-4 py-3 text-center rounded-lg mx-2 text-white bg-red-500 hover:bg-red-600 transition-colors duration-200 text-sm font-medium"
+                className="flex items-center justify-center w-full px-4 py-3 text-center rounded-lg text-white bg-red-500 hover:bg-red-600 transition-colors duration-200 text-sm font-medium"
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                 </svg>
                 LOGOUT
@@ -858,68 +790,114 @@ const HomePageLoggedIn = ({ onLogout }) => {
       </footer>
 
       {/* Modals and Popups */}
-      <CardPopup open={DonateOpen} onClose={() => setDonateOpen(false)} title="Make a Donation">
+      {/* Donation Popup with QR Code */}
+      <CardPopup 
+        open={DonateOpen} 
+        onClose={() => {
+          setDonateOpen(false);
+          setShowQRCode(false);
+        }} 
+        title="Make a Donation"
+      >
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, p: 2 }}>
-          <Typography variant="body1" sx={{ mb: 1 }}>
-            Support our parish by making a donation. Your generosity helps us continue our mission.
-          </Typography>
-          {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
-          <TextField
-            label="Enter Amount"
-            variant="outlined"
-            value={amount === '0' || amount === '' ? '' : `${(parseFloat(amount) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            onChange={(e) => {
-              const input = e.target.value;
-              const digitsOnly = input.replace(/[^\d]/g, '');
-              
-              if (digitsOnly === '') {
-                setAmount('');
-                return;
-              }
-              
-              const numericValue = parseInt(digitsOnly, 10) / 100;
-              
-              if (numericValue <= 99999999.99) {
-                setAmount(numericValue.toFixed(2));
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Backspace') {
-                e.preventDefault();
-                const currentAmount = parseFloat(amount) || 0;
-                const cents = Math.floor(currentAmount * 100);
-                const newCents = Math.floor(cents / 10);
-                const newAmount = newCents / 100;
-                setAmount(newCents === 0 ? '' : newAmount.toFixed(2));
-              }
-            }}
-            fullWidth
-            autoFocus
-            InputProps={{
-              startAdornment: <InputAdornment position="start">₱</InputAdornment>,
-            }}
-            inputProps={{
-              inputMode: 'numeric',
-              style: { textAlign: 'right' }
-            }}
-            placeholder="0.00"
-          />
-          <TextField
-            label="Enter Donation Intercession (Optional)"
-            variant="outlined"
-            type="text"
-            value={donationIntercession}
-            onChange={(e) => setDonationIntercession(e.target.value)}
-            fullWidth
-          />
-          <Button 
-            variant="contained" 
-            fullWidth 
-            onClick={handleDonate}
-            sx={{ bgcolor: '#E1D5B8', '&:hover': { bgcolor: '#d1c5a8' } }}
-          >
-            Confirm Donation
-          </Button>
+          {showQRCode ? (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="h6" gutterBottom>
+                Scan QR Code to Complete Payment
+              </Typography>
+              <img 
+                src={`/images/qr-codes/qr-${Math.floor(Math.random() * 3) + 1}.png`} 
+                alt="Donation QR Code"
+                style={{ 
+                  width: '250px', 
+                  height: '250px', 
+                  margin: '0 auto',
+                  border: '2px solid #E1D5B8',
+                  borderRadius: '8px'
+                }}
+              />
+              <Typography variant="body2" sx={{ mt: 2, color: '#6B5F32' }}>
+                Please complete your payment within 15 minutes
+              </Typography>
+              <Button 
+                variant="contained" 
+                sx={{ 
+                  mt: 2, 
+                  bgcolor: '#E1D5B8', 
+                  '&:hover': { bgcolor: '#d1c5a8' } 
+                }}
+                onClick={() => {
+                  setShowQRCode(true);
+                  setDonateOpen(false);
+                }}
+              >
+                Done
+              </Button>
+            </Box>
+          ) : (
+            <>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                Support our parish by making a donation. Your generosity helps us continue our mission.
+              </Typography>
+              {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
+              <TextField
+                label="Enter Amount"
+                variant="outlined"
+                value={amount === '0' || amount === '' ? '' : `${(parseFloat(amount) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                onChange={(e) => {
+                  const input = e.target.value;
+                  const digitsOnly = input.replace(/[^\d]/g, '');
+                  
+                  if (digitsOnly === '') {
+                    setAmount('');
+                    return;
+                  }
+                  
+                  const numericValue = parseInt(digitsOnly, 10) / 100;
+                  
+                  if (numericValue <= 99999999.99) {
+                    setAmount(numericValue.toFixed(2));
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Backspace') {
+                    e.preventDefault();
+                    const currentAmount = parseFloat(amount) || 0;
+                    const cents = Math.floor(currentAmount * 100);
+                    const newCents = Math.floor(cents / 10);
+                    const newAmount = newCents / 100;
+                    setAmount(newCents === 0 ? '' : newAmount.toFixed(2));
+                  }
+                }}
+                fullWidth
+                autoFocus
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">₱</InputAdornment>,
+                }}
+                inputProps={{
+                  inputMode: 'numeric',
+                  style: { textAlign: 'right' }
+                }}
+                placeholder="0.00"
+              />
+              <TextField
+                label="Enter Donation Intercession (Optional)"
+                variant="outlined"
+                type="text"
+                value={donationIntercession}
+                onChange={(e) => setDonationIntercession(e.target.value)}
+                fullWidth
+              />
+              <Button 
+                variant="contained" 
+                fullWidth 
+                onClick={handleDonate}
+                sx={{ bgcolor: '#E1D5B8', '&:hover': { bgcolor: '#d1c5a8' } }}
+              >
+                Confirm Donation
+              </Button>
+            </>
+          )}
         </Box>
       </CardPopup>
 

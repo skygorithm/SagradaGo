@@ -31,7 +31,7 @@ const Chatbot = () => {
     }
   }, [messages, loading]);
 
-  // ===== Message Handling =====
+// ===== Message Handling =====
   // Resolve API base URL depending on environment (local dev uses server port, prod uses configured URL)
   const getApiBaseUrl = () => {
     // Use environment variable for API URL
@@ -40,8 +40,8 @@ const Chatbot = () => {
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
 
     if (isLocalhost) {
-      console.log('Using local development API endpoint: http://sagradago.onrender.com');
-      return 'http://sagradago.onrender.com';
+      console.log('Using local development API endpoint: http://localhost:5001');
+      return 'http://localhost:5001';
     }
 
     console.log('Using production API endpoint:', apiUrl);

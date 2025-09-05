@@ -39,7 +39,11 @@ import {
   FormControl,
   Select,
   Divider,
+  useMediaQuery,
+  useTheme,
+  Drawer,
 } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -73,6 +77,8 @@ import deleteSacramentDocuments from '../utils/admin-functions/delete-documents/
 import restoreSacramentDocuments from '../utils/admin-functions/delete-documents/restoreSacramentDocuments';
 import permanentlyDeleteSacramentDocuments from '../utils/admin-functions/delete-documents/permanentlyDeleteSacramentDocuments';
 import WeddingSacramentForm from '../components/sacramentFormsSpecific/WeddingSacramentForm';
+
+
 
 // Field name mapping for better display
 const getFieldDisplayName = (fieldName) => {
@@ -274,6 +280,11 @@ const TABLE_STRUCTURES = {
 };
 
 const AdminDashboard = () => {
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   // View management
   const [currentView, setCurrentView] = useState('bookings');
   
@@ -1234,12 +1245,12 @@ const AdminDashboard = () => {
         {/* Gender Pie Chart */}
         <div className="bg-white p-4 rounded-2xl shadow text-center">
           <h3 className="text-xl font-semibold mb-2">User Gender Distribution</h3>
-          <PieChart width={250} height={250} className='mx-auto'>
+          <PieChart width={isMobile ? 200 : 250} height={isMobile ? 200 : 250} className='mx-auto'>
             <Pie
               data={stats.genderCounts}
               dataKey="value"
               nameKey="name"
-              outerRadius={100}
+              outerRadius={isMobile ? 80 : 100}
             >
               {stats.genderCounts.map((_, idx) => (
                 <Cell key={`${_.name}`} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
@@ -1253,10 +1264,10 @@ const AdminDashboard = () => {
         {/* Pending Bookings by Sacrament */}
         <div className="bg-white p-4 rounded-2xl shadow text-center">
           <h3 className="text-xl font-semibold mb-2">Pending Bookings by Sacrament</h3>
-          <BarChart width={250} height={250} data={stats.pendingBySacrament} className='mx-auto'>
+          <BarChart width={isMobile ? 200 : 250} height={isMobile ? 200 : 250} data={stats.pendingBySacrament} className='mx-auto'>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="sacrament" />
-            <YAxis />
+            <XAxis dataKey="sacrament" fontSize={isMobile ? 10 : 12} />
+            <YAxis fontSize={isMobile ? 10 : 12} />
             <Tooltip />
             <Bar dataKey="count" onClick={(data, index) => {
               if (data && data.sacrament) {
@@ -1275,46 +1286,46 @@ const AdminDashboard = () => {
         {/* Monthly Donations Line Chart */}
         <div className="bg-white p-4 rounded-2xl shadow text-center">
           <h3 className="text-xl font-semibold mb-2">Monthly Donations (Last 6 Months)</h3>
-          <LineChart width={250} height={250} data={stats.monthlyDonations} className='mx-auto'>
+          <LineChart width={isMobile ? 200 : 250} height={isMobile ? 200 : 250} data={stats.monthlyDonations} className='mx-auto'>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
+            <XAxis dataKey="month" fontSize={isMobile ? 10 : 12} />
+            <YAxis fontSize={isMobile ? 10 : 12} />
             <Tooltip />
             <Line type="monotone" dataKey="amount" />
           </LineChart>
         </div>
 
-        {/* Donation Summary */}
+        {/* Donation Summary - Make table responsive */}
         <div className='bg-white p-4 rounded-2xl shadow text-center'>
           <h3 className="text-xl font-semibold mb-2">Donation Summary</h3>
           <div className='overflow-x-auto'>
             <table className='min-w-full border-separate border-spacing-0 rounded-2xl overflow-hidden shadow-sm'>
               <thead className='bg-gray-100'>
                 <tr>
-                  <th className="px-4 py-2 border text-left">Donation Period</th>
-                  <th className="px-4 py-2 border">Amount</th>
+                  <th className="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Donation Period</th>
+                  <th className="px-2 md:px-4 py-2 border text-xs md:text-sm">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td className="px-4 py-2 border text-left">Today</td>
-                  <td className="px-4 py-2 border font-bold">{stats.donationSummary.today}</td>
+                  <td className="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Today</td>
+                  <td className="px-2 md:px-4 py-2 border font-bold text-xs md:text-sm">{stats.donationSummary.today}</td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-2 border text-left">Past 7 Days</td>
-                  <td className="px-4 py-2 border font-bold">{stats.donationSummary.lastWeek}</td>
+                  <td className="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Past 7 Days</td>
+                  <td className="px-2 md:px-4 py-2 border font-bold text-xs md:text-sm">{stats.donationSummary.lastWeek}</td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-2 border text-left">This Month</td>
-                  <td className="px-4 py-2 border font-bold">{stats.donationSummary.thisMonth}</td>
+                  <td className="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">This Month</td>
+                  <td className="px-2 md:px-4 py-2 border font-bold text-xs md:text-sm">{stats.donationSummary.thisMonth}</td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-2 border text-left">Monthly Average</td>
-                  <td className="px-4 py-2 border font-bold">{stats.donationSummary.average}</td>
+                  <td className="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Monthly Average</td>
+                  <td className="px-2 md:px-4 py-2 border font-bold text-xs md:text-sm">{stats.donationSummary.average}</td>
                 </tr>
                 <tr>
-                  <td className="px-4 py-2 border text-left">Year-to-Date Total</td>
-                  <td className="px-4 py-2 border font-bold">{stats.donationSummary.yearTotal}</td>
+                  <td className="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">Year-to-Date Total</td>
+                  <td className="px-2 md:px-4 py-2 border font-bold text-xs md:text-sm">{stats.donationSummary.yearTotal}</td>
                 </tr>
               </tbody>
             </table>
@@ -1323,12 +1334,63 @@ const AdminDashboard = () => {
       </div>
     </div>
   );
-
-  const renderSacramentBookings = () => (
-    <div>
-      <Box display="flex" gap={2}>
-        {/* Sacrament Types Sidebar */}
-        <Paper sx={{ p: 2, width: '200px' }}>
+const renderSacramentBookings = () => (
+  <div>
+    <Box display="flex" flexDirection={isMobile ? 'column' : 'row'} gap={2}>
+      {/* Mobile Drawer for Sacrament Types */}
+      {isMobile ? (
+        <>
+          <Box display="flex" alignItems="center" gap={1} mb={2}>
+            <IconButton onClick={() => setMobileOpen(true)}>
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6">
+              {selectedSacrament === 'all' ? 'All Sacrament Bookings' : getDisplaySacrament(selectedSacrament)}
+            </Typography>
+          </Box>
+          <Drawer
+            anchor="left"
+            open={mobileOpen}
+            onClose={() => setMobileOpen(false)}
+            ModalProps={{ keepMounted: true }}
+          >
+            <Box sx={{ width: 250, p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Sacrament Types
+              </Typography>
+              <Button
+                fullWidth
+                variant={selectedSacrament === 'all' ? 'contained' : 'text'}
+                onClick={() => {
+                  handleSacramentTableSelect('all');
+                  setMobileOpen(false);
+                }}
+                sx={{ justifyContent: 'flex-start', mb: 1 }}
+              >
+                <span className='text-[#6B5F32] font-bold'>All Bookings</span>
+              </Button>
+              {bookingTables.map((sacrament) => (
+                <Button
+                  key={sacrament}
+                  fullWidth
+                  variant={selectedSacrament === sacrament ? 'contained' : 'text'}
+                  onClick={() => {
+                    handleSacramentTableSelect(sacrament);
+                    setMobileOpen(false);
+                  }}
+                  sx={{ justifyContent: 'flex-start', mb: 1 }}
+                >
+                  <span className='text-[#6B5F32] font-bold'>
+                    {BOOKING_TABLE_STRUCTURES[sacrament]?.displayName || sacrament}
+                  </span>
+                </Button>
+              ))}
+            </Box>
+          </Drawer>
+        </>
+      ) : (
+        /* Desktop Sidebar */
+        <Paper sx={{ p: 2, width: '200px', minWidth: '200px' }}>
           <Typography variant="h6" gutterBottom>
             Sacrament Types
           </Typography>
@@ -1338,9 +1400,7 @@ const AdminDashboard = () => {
             onClick={() => handleSacramentTableSelect('all')}
             sx={{ justifyContent: 'flex-start', mb: 1 }}
           >
-            <span className='text-[#6B5F32] font-bold'>
-              All Bookings
-            </span>
+            <span className='text-[#6B5F32] font-bold'>All Bookings</span>
           </Button>
           {bookingTables.map((sacrament) => (
             <Button
@@ -1356,59 +1416,63 @@ const AdminDashboard = () => {
             </Button>
           ))}
         </Paper>
+      )}
 
-        <Paper sx={{ p: 2, flex: 1 }}>
-          {bookingLoading ? (
-            <Box display="flex" justifyContent="center" p={3}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6">
-                  {selectedSacrament === 'all' ? 'All Sacrament Bookings' : getDisplaySacrament(selectedSacrament)}
-                </Typography>
-                <Box>
-                  <Button
-                    variant="outlined"
-                    startIcon={<FilterListIcon />}
-                    onClick={(e) => handleFilterClick(e, setSacramentFilterAnchorEl)}
-                    sx={{ mr: 1, color: '#6B5F32' }}
-                  >
-                    Filters
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<ViewColumnIcon />}
-                    onClick={(e) => handleColumnClick(e, setSacramentColumnAnchorEl)}
-                    sx={{ mr: 1, color: '#6B5F32' }}
-                  >
-                    Columns
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<SaveAltIcon />}
-                    onClick={() => exportToCSV(sacramentFilteredData, selectedSacrament === 'all' ? 'all_bookings' : selectedSacrament)}
-                    sx={{ mr: 1, color: '#6B5F32' }}
-                  >
-                    Export
-                  </Button>
-                  {selectedSacrament !== 'all' && (
-                    <Button
-                      variant="contained"
-                      startIcon={<AddIcon />}
-                      onClick={() => handleSacramentAdd({
-                        selectedSacrament, 
-                        setFormData, 
-                        setEditingRecord, 
-                        setOpenSacramentDialog
-                      })}
-                    >
-                      Add New
-                    </Button>
-                  )}
-                </Box>
-              </Box>
+      <Paper sx={{ p: 2, flex: 1, minWidth: 0 }}>
+        {/* Rest of the sacrament bookings content remains the same but update the action buttons */}
+        <Box display="flex" flexDirection={isMobile ? 'column' : 'row'} 
+             justifyContent="space-between" alignItems={isMobile ? 'stretch' : 'center'} 
+             mb={2} gap={isMobile ? 2 : 0}>
+          {!isMobile && (
+            <Typography variant="h6">
+              {selectedSacrament === 'all' ? 'All Sacrament Bookings' : getDisplaySacrament(selectedSacrament)}
+            </Typography>
+          )}
+          <Box display="flex" flexDirection={isMobile ? 'column' : 'row'} gap={1}>
+            <Button
+              variant="outlined"
+              startIcon={<FilterListIcon />}
+              onClick={(e) => handleFilterClick(e, setSacramentFilterAnchorEl)}
+              sx={{ mr: isMobile ? 0 : 1, color: '#6B5F32' }}
+              size={isMobile ? 'small' : 'medium'}
+            >
+              Filters
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<ViewColumnIcon />}
+              onClick={(e) => handleColumnClick(e, setSacramentColumnAnchorEl)}
+              sx={{ mr: isMobile ? 0 : 1, color: '#6B5F32' }}
+              size={isMobile ? 'small' : 'medium'}
+            >
+              Columns
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<SaveAltIcon />}
+              onClick={() => exportToCSV(sacramentFilteredData, selectedSacrament === 'all' ? 'all_bookings' : selectedSacrament)}
+              sx={{ mr: isMobile ? 0 : 1, color: '#6B5F32' }}
+              size={isMobile ? 'small' : 'medium'}
+            >
+              Export
+            </Button>
+            {selectedSacrament !== 'all' && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => handleSacramentAdd({
+                  selectedSacrament, 
+                  setFormData, 
+                  setEditingRecord, 
+                  setOpenSacramentDialog
+                })}
+                size={isMobile ? 'small' : 'medium'}
+              >
+                Add New
+              </Button>
+            )}
+          </Box>
+        </Box>
 
               {/* Table Statistics */}
               {Object.keys(sacramentTableStats).length > 0 && (
@@ -1679,18 +1743,59 @@ const AdminDashboard = () => {
                 onRowsPerPageChange={(e) => handleChangeRowsPerPage(e, setSacramentRowsPerPage, setSacramentPage)}
                 rowsPerPageOptions={[5, 10, 25, 50]}
               />
-            </>
-          )}
         </Paper>
       </Box>
     </div>
   );
 
-  const renderManagement = () => (
-    <div>
-      <Box display="flex" gap={2}>
-        {/* Tables Sidebar */}
-        <Paper sx={{ p: 2, width: '200px' }}>
+const renderManagement = () => (
+  <div>
+    <Box display="flex" flexDirection={isMobile ? 'column' : 'row'} gap={2}>
+      {/* Mobile Drawer for Management Tables */}
+      {isMobile ? (
+        <>
+          <Box display="flex" alignItems="center" gap={1} mb={2}>
+            <IconButton onClick={() => setMobileOpen(true)}>
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6">
+              {selectedTable ? (TABLE_STRUCTURES[selectedTable]?.displayName || selectedTable) : 'Management'}
+            </Typography>
+          </Box>
+          <Drawer
+            anchor="left"
+            open={mobileOpen}
+            onClose={() => setMobileOpen(false)}
+            ModalProps={{ keepMounted: true }}
+          >
+            <Box sx={{ width: 250, p: 2 }}>
+              <Typography variant="h6" gutterBottom>
+                Management Tables
+              </Typography>
+              {tables.map((table) => (
+                <React.Fragment key={table}>
+                  <Button
+                    fullWidth
+                    variant={selectedTable === table ? 'contained' : 'text'}
+                    onClick={() => {
+                      handleTableSelect(table);
+                      setMobileOpen(false);
+                    }}
+                    sx={{ justifyContent: 'flex-start', mb: 1 }}
+                  >
+                    <span className='text-[#6B5F32] font-bold'>
+                      {TABLE_STRUCTURES[table]?.displayName || table}
+                    </span>
+                  </Button>
+                  {table === 'request_tbl' && <Divider sx={{ my: 1 }} />}
+                </React.Fragment>
+              ))}
+            </Box>
+          </Drawer>
+        </>
+      ) : (
+        /* Desktop Sidebar */
+        <Paper sx={{ p: 2, width: '200px', minWidth: '200px' }}>
           <Typography variant="h6" gutterBottom>
             Management Tables
           </Typography>
@@ -1706,65 +1811,72 @@ const AdminDashboard = () => {
                   {TABLE_STRUCTURES[table]?.displayName || table}
                 </span>
               </Button>
-              {table === 'request_tbl' && (
-                <Divider sx={{ my: 1 }} />
-              )}
+              {table === 'request_tbl' && <Divider sx={{ my: 1 }} />}
             </React.Fragment>
           ))}
         </Paper>
+      )}
 
-        <Paper sx={{ p: 2, flex: 1 }}>
-          {loading ? (
-            <Box display="flex" justifyContent="center" p={3}>
-              <CircularProgress />
-            </Box>
-          ) : selectedTable ? (
-            <>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+      <Paper sx={{ p: 2, flex: 1, minWidth: 0 }}>
+        {loading ? (
+          <Box display="flex" justifyContent="center" p={3}>
+            <CircularProgress />
+          </Box>
+        ) : selectedTable ? (
+          <>
+            <Box display="flex" flexDirection={isMobile ? 'column' : 'row'} 
+                 justifyContent="space-between" alignItems={isMobile ? 'stretch' : 'center'} 
+                 mb={2} gap={isMobile ? 2 : 0}>
+              {!isMobile && (
                 <Typography variant="h6">
                   {TABLE_STRUCTURES[selectedTable]?.displayName || selectedTable}
                 </Typography>
-                <Box>
-                  <Button
-                    variant="outlined"
-                    startIcon={<FilterListIcon />}
-                    onClick={(e) => handleFilterClick(e, setFilterAnchorEl)}
-                    sx={{ mr: 1, color: '#6B5F32' }}
-                  >
-                    Filters
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<ViewColumnIcon />}
-                    onClick={(e) => handleColumnClick(e, setColumnAnchorEl)}
-                    sx={{ mr: 1, color: '#6B5F32' }}
-                  >
-                    Columns
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    startIcon={<SaveAltIcon />}
-                    onClick={() => exportToCSV(filteredData, selectedTable)}
-                    sx={{ mr: 1, color: '#6B5F32' }}
-                  >
-                    Export
-                  </Button>
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => handleAdd({
-                      selectedTable, 
-                      setFormData, 
-                      setEditingRecord, 
-                      setOpenDialog
-                    })}
-                  >
-                    Add New
-                  </Button>
-                </Box>
+              )}
+              <Box display="flex" flexDirection={isMobile ? 'column' : 'row'} gap={1}>
+                <Button
+                  variant="outlined"
+                  startIcon={<FilterListIcon />}
+                  onClick={(e) => handleFilterClick(e, setFilterAnchorEl)}
+                  sx={{ mr: isMobile ? 0 : 1, color: '#6B5F32' }}
+                  size={isMobile ? 'small' : 'medium'}
+                >
+                  Filters
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<ViewColumnIcon />}
+                  onClick={(e) => handleColumnClick(e, setColumnAnchorEl)}
+                  sx={{ mr: isMobile ? 0 : 1, color: '#6B5F32' }}
+                  size={isMobile ? 'small' : 'medium'}
+                >
+                  Columns
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<SaveAltIcon />}
+                  onClick={() => exportToCSV(filteredData, selectedTable)}
+                  sx={{ mr: isMobile ? 0 : 1, color: '#6B5F32' }}
+                  size={isMobile ? 'small' : 'medium'}
+                >
+                  Export
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => handleAdd({
+                    selectedTable, 
+                    setFormData, 
+                    setEditingRecord, 
+                    setOpenDialog
+                  })}
+                  size={isMobile ? 'small' : 'medium'}
+                >
+                  Add New
+                </Button>
               </Box>
+            </Box>
 
-              {/* Table Statistics */}
+                          {/* Table Statistics */}
               {Object.keys(tableStats).length > 0 && (
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="subtitle1" gutterBottom>Statistics</Typography>
@@ -2041,16 +2153,19 @@ const AdminDashboard = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
+      <Box display="flex" flexDirection={isMobile ? 'column' : 'row'} 
+          justifyContent="space-between" alignItems={isMobile ? 'stretch' : 'center'} 
+          mb={3} gap={isMobile ? 2 : 0}>
+        <Typography variant={isMobile ? 'h5' : 'h4'} component="h1">
           Admin Dashboard
         </Typography>
-        <Box>
+        <Box display="flex" flexDirection={isMobile ? 'column' : 'row'} gap={isMobile ? 1 : 2}>
           <Button
             variant="outlined"
             startIcon={<HistoryIcon />}
             onClick={handleViewLogs}
-            sx={{ mr: 2, color: '#6B5F32' }}
+            sx={{ color: '#6B5F32' }}
+            size={isMobile ? 'small' : 'medium'}
           >
             View Logs
           </Button>
@@ -2058,14 +2173,16 @@ const AdminDashboard = () => {
             variant="outlined"
             startIcon={<DeleteForeverIcon />}
             onClick={handleViewDeleted}
-            sx={{ mr: 2, color: '#6B5F32' }}
+            sx={{ color: '#6B5F32' }}
+            size={isMobile ? 'small' : 'medium'}
           >
             View Trash
           </Button>
           <Button
             variant="outlined"
             onClick={() => navigate('/admin/approved-calendar')}
-            sx={{ mr: 2, color: '#6B5F32' }}
+            sx={{ color: '#6B5F32' }}
+            size={isMobile ? 'small' : 'medium'}
           >
             Approved Bookings Calendar
           </Button>
@@ -2073,6 +2190,7 @@ const AdminDashboard = () => {
             variant="contained" 
             color="primary" 
             onClick={handleLogout}
+            size={isMobile ? 'small' : 'medium'}
           >
             Logout
           </Button>
@@ -2080,12 +2198,14 @@ const AdminDashboard = () => {
       </Box>
 
       {/* Navigation Buttons */}
-      <Box display="flex" gap={2} mb={4}>
+      <Box display="flex" flexDirection={isMobile ? 'column' : 'row'} gap={2} mb={4}>
         <Button
           variant={currentView === 'analytics' ? 'contained' : 'outlined'}
           startIcon={<AnalyticsIcon />}
           onClick={() => setCurrentView('analytics')}
           sx={{ color: currentView === 'analytics' ? 'white' : '#6B5F32' }}
+          size={isMobile ? 'small' : 'medium'}
+          fullWidth={isMobile}
         >
           Data Analytics
         </Button>
@@ -2094,6 +2214,8 @@ const AdminDashboard = () => {
           startIcon={<BookingsIcon />}
           onClick={() => setCurrentView('bookings')}
           sx={{ color: currentView === 'bookings' ? 'white' : '#6B5F32' }}
+          size={isMobile ? 'small' : 'medium'}
+          fullWidth={isMobile}
         >
           Sacrament Bookings
         </Button>
@@ -2102,6 +2224,8 @@ const AdminDashboard = () => {
           startIcon={<ManageAccountsIcon />}
           onClick={() => setCurrentView('management')}
           sx={{ color: currentView === 'management' ? 'white' : '#6B5F32' }}
+          size={isMobile ? 'small' : 'medium'}
+          fullWidth={isMobile}
         >
           Management
         </Button>

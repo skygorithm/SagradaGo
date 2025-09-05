@@ -19,36 +19,40 @@ services:
         value: https://jbjqxxfaorxtitvmpotp.supabase.co
       - key: REACT_APP_SUPABASE_ANON_KEY
         value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpianF4eGZhb3J4dGl0dm1wb3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NDUyODksImV4cCI6MjA2MzMyMTI4OX0.9jUHGZKbpZymm0f5UTngBdx5e90Xo5cNyVTGe9VQoNs
-    headers:
-      - path: /*
-        name: Access-Control-Allow-Origin
-        value: https://sagradago.online
-      - path: /*
-        name: Access-Control-Allow-Methods
-        value: GET, POST, PUT, DELETE, OPTIONS
-      - path: /*
-        name: Access-Control-Allow-Headers
-        value: Content-Type, Authorization, X-Requested-With
-      - path: /*
-        name: Access-Control-Allow-Credentials
-        value: true
+      - key: RECAPTCHA_SITE_KEY
+        value: YOUR_RECAPTCHA_SITE_KEY_HERE
+      - key: RECAPTCHA_SECRET_KEY
+        value: YOUR_RECAPTCHA_SECRET_KEY_HERE
+    # Remove headers since CORS is handled in the server code
+    healthCheckPath: /api/health
 
   # Frontend service
   - type: web
     name: sagradago-frontend
     env: static
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npm run build
     staticPublishPath: build
+    envVars:
+      - key: NODE_VERSION
+        value: 18.17.0
+      - key: REACT_APP_SUPABASE_URL
+        value: https://jbjqxxfaorxtitvmpotp.supabase.co
+      - key: REACT_APP_SUPABASE_ANON_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpianF4eGZhb3J4dGl0dm1wb3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NDUyODksImV4cCI6MjA2MzMyMTI4OX0.9jUHGZKbpZymm0f5UTngBdx5e90Xo5cNyVTGe9VQoNs
+      - key: REACT_APP_BACKEND_URL
+        value: https://sagradago-backend.onrender.com
+      - key: REACT_APP_RECAPTCHA_SITE_KEY
+        value: YOUR_RECAPTCHA_SITE_KEY_HERE
     routes:
       # Serve static files first
       - type: rewrite
         source: /static/*
         destination: /static/*
-      # API rewrite rule - Updated to match CORS configuration
+      # API proxy to backend - Updated URL
       - type: rewrite
-        source: /api/:path*
-        destination: https://sagradago-backend.onrender.com/api/:path*
-      # Handle client-side routing
+        source: /api/*
+        destination: https://sagradago-backend.onrender.com/api/*
+      # Handle client-side routing - this should be last
       - type: rewrite
         source: /*
         destination: /index.html
@@ -59,3 +63,12 @@ services:
       - path: /static/*
         name: Cache-Control
         value: public, max-age=31536000, immutable
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block
