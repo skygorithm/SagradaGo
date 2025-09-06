@@ -26,14 +26,15 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "node scripts/start-react.js",
-    "serve:api": "node server/server.js",
+    "start": "cross-env NODE_ENV=production node server.js",
+    "serve:api": "node -r @babel/register scripts/load-env.js && cross-env PORT=5001 node server/server.js",
     "build": "npm install && react-scripts build && node scripts/copy-redirects.js",
-    "build:functions": "cd netlify/functions && npm i --omit=dev && cd - >/dev/null 2>&1 || true",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "dev": "concurrently \"npm run start\" \"npm run serve:api\"",
-    "clean": "rm -rf build node_modules/.cache"
+    "dev": "concurrently -k -p \"[{name}]\" -n \"API,WEB\" -c \"yellow.bold,cyan.bold\" \"npm run serve:api\" \"cross-env PORT=3000 react-scripts start\"",
+    "heroku-postbuild": "npm run build",
+    "postinstall": "npm run build:functions || exit 0",
+    "build:functions": "node scripts/build-functions.js"
   },
   "eslintConfig": {
     "extends": [
@@ -54,12 +55,16 @@
     ]
   },
   "devDependencies": {
+    "@babel/core": "^7.28.4",
+    "@babel/preset-env": "^7.28.3",
+    "@babel/register": "^7.28.3",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "autoprefixer": "^10.4.14",
+    "chalk": "^5.6.0",
     "concurrently": "^8.2.2",
     "cors": "^2.8.5",
     "cross-env": "^10.0.0",

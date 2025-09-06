@@ -1,5 +1,10 @@
+// BACKEND SERVER (server/server.js)
+// This server handles API requests, including Gemini API integration, reCAPTCHA verification, and user management.
+
 // Load environment variables from .env file
-require('dotenv').config();
+const { loadEnv } = require('../scripts/load-env');
+loadEnv();
+require('dotenv').config({ path: '.env' });
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
@@ -12,8 +17,7 @@ const hasSupabaseConfig = !!(process.env.REACT_APP_SUPABASE_URL && process.env.R
 const supabase = hasSupabaseConfig
   ? createClient(process.env.REACT_APP_SUPABASE_URL, process.env.REACT_SUPABASE_SERVICE_ROLE_KEY)
   : null;
-
-
+  
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
