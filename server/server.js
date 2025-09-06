@@ -23,120 +23,91 @@ console.log('- Supabase Service Role Key:', process.env.REACT_SUPABASE_SERVICE_R
 console.log('- reCAPTCHA Site Key:', process.env.RECAPTCHA_SITE_KEY ? 'Configured' : 'Not configured');
 console.log('- reCAPTCHA Secret Key:', process.env.RECAPTCHA_SECRET_KEY ? 'Configured' : 'Not configured');
 
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://sagradago.online',
+  'https://www.sagradago.online',
+  'https://sagradago.netlify.app',
+  'http://localhost:5001',
+  'http://localhost:5000'
+];
+
 // ===== Middleware Setup =====
+const corsOptions = {
+  origin: function(origin, callback) {
+    // Normalize origin to lowercase for case-insensitive matching
+    const normalizedOrigin = origin ? origin.toLowerCase() : '';
+    
+    // Always allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) {
+      console.log('🌐 [CORS] ✅ No origin header - allowing');
+      return callback(null, true);
+    }
+
+    // Check if normalized origin is in allowed origins
+    if (ALLOWED_ORIGINS.includes(normalizedOrigin)) {
+      console.log(`🌐 [CORS] ✅ Origin allowed: ${normalizedOrigin}`);
+      return callback(null, true);
+    }
+
+    // Log blocked origin for debugging
+    console.error(`🌐 [CORS] ❌ Origin blocked: ${normalizedOrigin}`);
+    console.log(`🌐 [CORS] ✅ Allowed origins: ${ALLOWED_ORIGINS.join(', ')}`);
+    
+    // In development, allow blocked origins for testing
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(`🌐 [CORS] ⚠️ DEV MODE: Allowing blocked origin: ${normalizedOrigin}`);
+      return callback(null, true);
+    }
+    
+    callback(new Error(`Origin ${normalizedOrigin} not allowed by CORS`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
+};
+
+// Apply CORS FIRST - this is critical!
+app.use(cors(corsOptions));
+
 // Add security headers
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   
-  // Content Security Policy
-  const csp = [
-    "default-src 'self'",
-    "connect-src 'self' https://generativelanguage.googleapis.com http://localhost:5001 https://sagradago.onrender.com https://*.supabase.co wss://*.supabase.co https://*.google.com https://www.google.com/recaptcha/",
-    "script-src 'self' 'unsafe-inline' https://www.google.com/recaptcha/",
-    "style-src 'self' 'unsafe-inline'",
-    "frame-src https://www.google.com/recaptcha/",
-    "img-src 'self' data:"
-  ].join('; ');
-  
-  res.setHeader('Content-Security-Policy', csp);
-
-  // Enhanced HSTS for production
+  // HSTS only in production
   if (process.env.NODE_ENV === 'production') {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-  } else {
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }
   
   next();
 });
 
-// Configure CORS
-const ALLOWED_ORIGINS = new Set([
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'https://sagradago.online',       // CORRECT: Full HTTPS URL
-  'https://www.sagradago.online',   // ADDED: WWW variant
-  'https://sagradago.netlify.app',
-  'http://localhost:5001',
-  'http://localhost:5000'
-]);
-
-const corsOptions = {
-  origin: function(origin, callback) {
-    const isProduction = process.env.NODE_ENV === 'production';
-    
-    console.log('🌐 [CORS CHECK] Processing request:');
-    console.log(`  Origin: ${origin || 'null/undefined'}`);
-    console.log(`  Environment: ${isProduction ? 'production' : 'development'}`);
-    console.log(`  Allowed origins: ${Array.from(ALLOWED_ORIGINS).join(', ')}`);
-
-    // Allow requests with no origin (mobile apps, curl, Postman)
-    if (!origin) {
-      console.log('🌐 [CORS CHECK] ✅ No origin header - allowing');
-      return callback(null, true);
-    }
-    
-    // FIX: Normalize origin to lowercase for case-insensitive matching
-    const normalizedOrigin = origin.toLowerCase();
-    
-    // FIX: Check normalized origin against set
-    if (ALLOWED_ORIGINS.has(normalizedOrigin)) {
-      console.log('🌐 [CORS CHECK] ✅ Origin allowed');
-      return callback(null, true);
-    }
-    
-    console.log('🌐 [CORS CHECK] ❌ Origin blocked:', origin);
-    console.log('🌐 [CORS CHECK] Available allowed origins:');
-    Array.from(ALLOWED_ORIGINS).forEach((allowedOrigin, index) => {
-      console.log(`  ${index + 1}. ${allowedOrigin}`);
-    });
-    
-    // In development, allow blocked origins for testing
-    if (!isProduction) {
-      console.log('🌐 [CORS CHECK] ⚠️  Development mode - allowing blocked origin');
-      return callback(null, true);
-    }
-    
-    callback(new Error(`Origin ${origin} not allowed by CORS`));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  optionsSuccessStatus: 200,
-  maxAge: 86400 // 24 hours
-};
-
-// Enable CORS with our configuration
-app.use(cors(corsOptions));
-
-// ===== Force HTTPS in Production =====
+// Force HTTPS in production (MUST come after CORS)
 app.use((req, res, next) => {
-  // Check if we're in production and the request is HTTP
   if (process.env.NODE_ENV === 'production' && req.header('x-forwarded-proto') !== 'https') {
-    console.log(`🔒 [HTTPS REDIRECT] Redirecting HTTP to HTTPS: ${req.url}`);
     return res.redirect(301, `https://${req.header('host')}${req.url}`);
   }
   next();
 });
+  
+  // Content Security Policy
+  // const csp = [
+  //   "default-src 'self'",
+  //   "connect-src 'self' https://generativelanguage.googleapis.com http://localhost:5001 https://sagradago.onrender.com https://*.supabase.co wss://*.supabase.co https://*.google.com https://www.google.com/recaptcha/",
+  //   "script-src 'self' 'unsafe-inline' https://www.google.com/recaptcha/",
+  //   "style-src 'self' 'unsafe-inline'",
+  //   "frame-src https://www.google.com/recaptcha/",
+  //   "img-src 'self' data:"
+  // ].join('; ');
 
-// Add security headers
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  
-  // Enhanced HSTS for production
-  if (process.env.NODE_ENV === 'production') {
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-  } else {
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  }
-  
-  next();
-});
+  // res.setHeader('Content-Security-Policy', csp);
+  // next();
+
+app.options('*', cors(corsOptions));
 
 // Parse JSON request bodies
 app.use(express.json());
@@ -389,25 +360,17 @@ app.post('/api/verify-recaptcha', async (req, res) => {
  * GET /api/health
  */
 app.get('/api/health', async (req, res) => {
-  console.log('🏥 [HEALTH CHECK] Request received');
-  console.log('🏥 [HEALTH CHECK] Request details:');
-  console.log('  - Host header:', req.headers.host);
-  console.log('  - Origin header:', req.headers.origin || 'Not provided');
-  console.log('  - User-Agent:', req.headers['user-agent'] || 'Not provided');
-  console.log('  - Protocol:', req.protocol);
-  console.log('  - X-Forwarded-Proto:', req.headers['x-forwarded-proto'] || 'Not provided');
-  console.log('  - URL:', req.url);
-  console.log('  - Method:', req.method);
+  const origin = req.get('origin');
+  const normalizedOrigin = origin ? origin.toLowerCase() : '';
   
-  console.log('🏥 [HEALTH CHECK] Environment variables:');
-  console.log('  - GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'Configured' : 'NOT CONFIGURED');
-  console.log('  - REACT_APP_SUPABASE_URL:', process.env.REACT_APP_SUPABASE_URL ? 'Configured' : 'NOT CONFIGURED');
-  console.log('  - REACT_SUPABASE_SERVICE_ROLE_KEY:', process.env.REACT_SUPABASE_SERVICE_ROLE_KEY ? 'Configured' : 'NOT CONFIGURED');
-  console.log('  - RECAPTCHA_SITE_KEY:', process.env.RECAPTCHA_SITE_KEY ? 'Configured' : 'NOT CONFIGURED');
-  console.log('  - RECAPTCHA_SECRET_KEY:', process.env.RECAPTCHA_SECRET_KEY ? 'Configured' : 'NOT CONFIGURED');
-  console.log('  - NODE_ENV:', process.env.NODE_ENV || 'development');
-  console.log('  - PORT:', process.env.PORT || 5001);
-
+  // Explicitly set CORS headers for health check
+  if (origin && ALLOWED_ORIGINS.includes(normalizedOrigin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  console.log('🏥 [HEALTH CHECK] Request received from:', origin || 'unknown');
+  
   // Test API connectivity
   console.log('🏥 [HEALTH CHECK] Testing Gemini API connectivity...');
   const apiTest = await testGeminiAPI().catch((error) => {
@@ -434,7 +397,7 @@ app.get('/api/health', async (req, res) => {
     httpsEnabled: req.headers['x-forwarded-proto'] === 'https' || req.protocol === 'https',
     // Add diagnostic info
     diagnostics: {
-      corsOrigins: Array.from(ALLOWED_ORIGINS),
+      corsOrigins: ALLOWED_ORIGINS,
       memoryUsage: Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB',
       uptime: Math.round(process.uptime()) + 's',
       nodeVersion: process.version,
