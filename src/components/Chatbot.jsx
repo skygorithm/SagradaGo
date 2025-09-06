@@ -47,8 +47,8 @@ const Chatbot = () => {
     console.log('Using production API endpoint:', apiUrl);
     return apiUrl;
   };
-  const API_GEMINI_URL = getApiBaseUrl() + '/api/gemini';
-  const API_HEALTH_URL = getApiBaseUrl() + '/api/health';
+  const API_GEMINI_URL = process.env.REACT_APP_API_URL + '/api/gemini';
+  const API_HEALTH_URL = /**getApiBaseUrl()**/ process.env.REACT_APP_API_URL + '/api/health';
   /**
    * Sends a message to the Gemini API and handles the response
    * @param {string} message - The message to send
