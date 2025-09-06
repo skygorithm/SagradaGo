@@ -33,35 +33,28 @@ const ALLOWED_ORIGINS = [
   'http://localhost:5000'
 ];
 
-// ===== Middleware Setup =====
+// ===== CORS CONFIGURATION =====
 const corsOptions = {
-  origin: function(origin, callback) {
-    // Normalize origin to lowercase for case-insensitive matching
+  origin: (origin, callback) => {
     const normalizedOrigin = origin ? origin.toLowerCase() : '';
     
-    // Always allow requests with no origin (mobile apps, curl, Postman)
     if (!origin) {
-      console.log('🌐 [CORS] ✅ No origin header - allowing');
+      console.log('🌐 [CORS] ✅ No origin (mobile/curl) - allowed');
       return callback(null, true);
     }
 
-    // Check if normalized origin is in allowed origins
     if (ALLOWED_ORIGINS.includes(normalizedOrigin)) {
       console.log(`🌐 [CORS] ✅ Origin allowed: ${normalizedOrigin}`);
       return callback(null, true);
     }
 
-    // Log blocked origin for debugging
-    console.error(`🌐 [CORS] ❌ Origin blocked: ${normalizedOrigin}`);
-    console.log(`🌐 [CORS] ✅ Allowed origins: ${ALLOWED_ORIGINS.join(', ')}`);
-    
-    // In development, allow blocked origins for testing
+    console.error(`🌐 [CORS] ❌ Blocked origin: ${normalizedOrigin}`);
     if (process.env.NODE_ENV !== 'production') {
-      console.warn(`🌐 [CORS] ⚠️ DEV MODE: Allowing blocked origin: ${normalizedOrigin}`);
+      console.warn(`🌐 [CORS] ⚠️ DEV: Allowing blocked origin`);
       return callback(null, true);
     }
     
-    callback(new Error(`Origin ${normalizedOrigin} not allowed by CORS`));
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
@@ -69,16 +62,29 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-// Apply CORS FIRST - this is critical!
+// ===== MIDDLEWARE ORDER =====
+// CORS middleware
 app.use(cors(corsOptions));
 
-// Add security headers
+// Explicitly handle OPTIONS preflight requests (MUST be right after CORS)
+app.options('*', cors(corsOptions)); 
+
+// Security headers 
 app.use((req, res, next) => {
+  const csp = [
+    "default-src 'self'",
+    "connect-src 'self' https://generativelanguage.googleapis.com https://sagradago.onrender.com https://*.supabase.co wss://*.supabase.co https://*.google.com https://www.google.com/recaptcha/",
+    "script-src 'self' 'unsafe-inline' https://www.google.com/recaptcha/",
+    "style-src 'self' 'unsafe-inline'",
+    "frame-src https://www.google.com/recaptcha/",
+    "img-src 'self' data:"
+  ].join('; ');
+  
+  res.setHeader('Content-Security-Policy', csp);
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   
-  // HSTS only in production
   if (process.env.NODE_ENV === 'production') {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   }
@@ -86,30 +92,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// Force HTTPS in production (MUST come after CORS)
+// FOURTH: Force HTTPS in production
 app.use((req, res, next) => {
   if (process.env.NODE_ENV === 'production' && req.header('x-forwarded-proto') !== 'https') {
     return res.redirect(301, `https://${req.header('host')}${req.url}`);
   }
   next();
 });
-  
-  // Content Security Policy
-  // const csp = [
-  //   "default-src 'self'",
-  //   "connect-src 'self' https://generativelanguage.googleapis.com http://localhost:5001 https://sagradago.onrender.com https://*.supabase.co wss://*.supabase.co https://*.google.com https://www.google.com/recaptcha/",
-  //   "script-src 'self' 'unsafe-inline' https://www.google.com/recaptcha/",
-  //   "style-src 'self' 'unsafe-inline'",
-  //   "frame-src https://www.google.com/recaptcha/",
-  //   "img-src 'self' data:"
-  // ].join('; ');
 
-  // res.setHeader('Content-Security-Policy', csp);
-  // next();
-
-app.options('*', cors(corsOptions));
-
-// Parse JSON request bodies
+// Body parser
 app.use(express.json());
 
 // Log all incoming requests (optimized for production)
