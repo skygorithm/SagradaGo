@@ -347,14 +347,14 @@ app.post('/api/verify-recaptcha', async (req, res) => {
  * GET /api/health
  */
 app.get('/api/health', async (req, res) => {
-  const origin = req.get('origin');
-  const normalizedOrigin = origin ? origin.toLowerCase() : '';
+  // const origin = req.get('origin');
+  // const normalizedOrigin = origin ? origin.toLowerCase() : '';
   
-  // Explicitly set CORS headers for health check
-  if (origin && ALLOWED_ORIGINS.includes(normalizedOrigin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-  }
+  // // Explicitly set CORS headers for health check
+  // if (origin && ALLOWED_ORIGINS.includes(normalizedOrigin)) {
+  //   res.header('Access-Control-Allow-Origin', origin);
+  //   res.header('Access-Control-Allow-Credentials', 'true');
+  // }
   
   console.log('🏥 [HEALTH CHECK] Request received from:', origin || 'unknown');
   
