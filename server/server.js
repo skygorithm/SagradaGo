@@ -13,15 +13,6 @@ const supabase = hasSupabaseConfig
   ? createClient(process.env.REACT_APP_SUPABASE_URL, process.env.REACT_SUPABASE_SERVICE_ROLE_KEY)
   : null;
 
-// Log server configuration
-console.log('Environment check:');
-console.log('- PORT:', process.env.PORT || 5001);
-console.log('- NODE_ENV:', process.env.NODE_ENV || 'development');
-console.log('- API Key configured:', !!process.env.GEMINI_API_KEY);
-console.log('- Supabase URL:', process.env.REACT_APP_SUPABASE_URL ? 'Configured' : 'Not configured');
-console.log('- Supabase Service Role Key:', process.env.REACT_SUPABASE_SERVICE_ROLE_KEY ? 'Configured' : 'Not configured');
-console.log('- reCAPTCHA Site Key:', process.env.RECAPTCHA_SITE_KEY ? 'Configured' : 'Not configured');
-console.log('- reCAPTCHA Secret Key:', process.env.RECAPTCHA_SECRET_KEY ? 'Configured' : 'Not configured');
 
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
@@ -62,14 +53,14 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-// ===== MIDDLEWARE ORDER =====
-// CORS middleware
+// ===== CORRECT MIDDLEWARE ORDER =====
+// 2.1 FIRST: Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Explicitly handle OPTIONS preflight requests (MUST be right after CORS)
-app.options('*', cors(corsOptions)); 
+// 2.2 SECOND: Explicitly handle OPTIONS preflight requests (MUST be right after CORS)
+app.options('*', cors(corsOptions));
 
-// Security headers 
+// 2.3 THIRD: Security headers (ONLY ONCE - NO DUPLICATES)
 app.use((req, res, next) => {
   const csp = [
     "default-src 'self'",
@@ -80,6 +71,7 @@ app.use((req, res, next) => {
     "img-src 'self' data:"
   ].join('; ');
   
+  // Set ALL security headers together
   res.setHeader('Content-Security-Policy', csp);
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -92,7 +84,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// FOURTH: Force HTTPS in production
+// 2.4 FOURTH: Force HTTPS in production
 app.use((req, res, next) => {
   if (process.env.NODE_ENV === 'production' && req.header('x-forwarded-proto') !== 'https') {
     return res.redirect(301, `https://${req.header('host')}${req.url}`);
