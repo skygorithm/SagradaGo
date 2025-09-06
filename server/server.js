@@ -31,19 +31,24 @@ const ALLOWED_ORIGINS = [
 // ===== CORS CONFIGURATION =====
 const corsOptions = {
   origin: (origin, callback) => {
-    const normalizedOrigin = origin ? origin.toLowerCase() : '';
-    
+    // Always allow requests without Origin header (mobile/curl)
     if (!origin) {
-      console.log('🌐 [CORS] ✅ No origin (mobile/curl) - allowed');
+      console.log('🌐 [CORS] ✅ No origin header - allowed');
       return callback(null, true);
     }
 
-    if (ALLOWED_ORIGINS.includes(normalizedOrigin)) {
-      console.log(`🌐 [CORS] ✅ Origin allowed: ${normalizedOrigin}`);
+    // Case-insensitive match against ALLOWED_ORIGINS
+    const isAllowed = ALLOWED_ORIGINS.some(allowed => 
+      allowed.toLowerCase() === origin.toLowerCase()
+    );
+
+    if (isAllowed) {
+      console.log(`🌐 [CORS] ✅ Origin allowed: ${origin}`);
       return callback(null, true);
     }
 
-    console.error(`🌐 [CORS] ❌ Blocked origin: ${normalizedOrigin}`);
+    console.error(`🌐 [CORS] ❌ Blocked origin: ${origin}`);
+    // Development override
     if (process.env.NODE_ENV !== 'production') {
       console.warn(`🌐 [CORS] ⚠️ DEV: Allowing blocked origin`);
       return callback(null, true);

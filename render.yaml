@@ -1,5 +1,5 @@
+# Backend API service
 services:
-  # Backend API service
   - type: web
     name: sagradago-backend
     env: node
@@ -7,8 +7,6 @@ services:
     buildCommand: npm ci
     startCommand: node server.js
     envVars:
-      # CRITICAL FIX 1: REMOVE HARDCODED PORT
-      # Render assigns port dynamically - never hardcode
       - key: NODE_ENV
         value: production
       - key: GEMINI_API_KEY
@@ -38,15 +36,8 @@ services:
         value: https://jbjqxxfaorxtitvmpotp.supabase.co
       - key: REACT_APP_SUPABASE_ANON_KEY
         value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpianF4eGZhb3J4dGl0dm1wb3RwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NDUyODksImV4cCI6MjA2MzMyMTI4OX0.9jUHGZKbpZymm0f5UTngBdx5e90Xo5cNyVTGe9VQoNs
-      # CRITICAL FIX 2: USE CORRECT BACKEND URL FORMAT
-      # Render service URLs are NOT https://service-name.onrender.com
-      # They are https://service-name-randomstring.onrender.com
       - key: REACT_APP_BACKEND_URL
-        # CORRECT: Use the actual backend service URL from Render dashboard
         value: https://sagradago-backend.onrender.com
-    # CRITICAL FIX 3: REMOVE REWRITE RULES FOR API
-    # API requests should go directly to backend, not through frontend proxy
-    # Render's static service cannot properly handle CORS preflight requests
     headers:
       - path: /*
         name: Cache-Control
