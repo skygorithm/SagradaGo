@@ -56,9 +56,8 @@ app.use((req, res, next) => {
 const ALLOWED_ORIGINS = new Set([
   'http://localhost:3000',
   'http://localhost:5173',
-  'https://sagradago.online',
-  'www.sagradago.online',
-  'sagradago.online',
+  'https://sagradago.online',       // CORRECT: Full HTTPS URL
+  'https://www.sagradago.online',   // ADDED: WWW variant
   'https://sagradago.netlify.app',
   'http://localhost:5001',
   'http://localhost:5000'
@@ -69,35 +68,38 @@ const corsOptions = {
     const isProduction = process.env.NODE_ENV === 'production';
     
     console.log('🌐 [CORS CHECK] Processing request:');
-   console.log(`  Origin: ${origin || 'null/undefined'}`);
+    console.log(`  Origin: ${origin || 'null/undefined'}`);
     console.log(`  Environment: ${isProduction ? 'production' : 'development'}`);
     console.log(`  Allowed origins: ${Array.from(ALLOWED_ORIGINS).join(', ')}`);
 
-    // Allow requests with no origin (like mobile apps, curl, Postman)
+    // Allow requests with no origin (mobile apps, curl, Postman)
     if (!origin) {
-      console.log('🌐 [CORS CHECK] ✅ No origin header - allowing (mobile app, curl, etc.)');
-      callback(null, true);
-      return;
+      console.log('🌐 [CORS CHECK] ✅ No origin header - allowing');
+      return callback(null, true);
     }
     
-    if (ALLOWED_ORIGINS.has(origin)) {
+    // FIX: Normalize origin to lowercase for case-insensitive matching
+    const normalizedOrigin = origin.toLowerCase();
+    
+    // FIX: Check normalized origin against set
+    if (ALLOWED_ORIGINS.has(normalizedOrigin)) {
       console.log('🌐 [CORS CHECK] ✅ Origin allowed');
-      callback(null, true);
-    } else {
-      console.log('🌐 [CORS CHECK] ❌ Origin blocked:', origin);
-      console.log('🌐 [CORS CHECK] Available allowed origins:');
-      Array.from(ALLOWED_ORIGINS).forEach((allowedOrigin, index) => {
-        console.log(`  ${index + 1}. ${allowedOrigin}`);
-      });
-      
-      // In development, be more permissive for testing
-      if (!isProduction) {
-        console.log('🌐 [CORS CHECK] ⚠️  Development mode - allowing blocked origin for testing');
-        callback(null, true);
-      } else {
-        callback(new Error(`Origin ${origin} not allowed by CORS`));
-      }
+      return callback(null, true);
     }
+    
+    console.log('🌐 [CORS CHECK] ❌ Origin blocked:', origin);
+    console.log('🌐 [CORS CHECK] Available allowed origins:');
+    Array.from(ALLOWED_ORIGINS).forEach((allowedOrigin, index) => {
+      console.log(`  ${index + 1}. ${allowedOrigin}`);
+    });
+    
+    // In development, allow blocked origins for testing
+    if (!isProduction) {
+      console.log('🌐 [CORS CHECK] ⚠️  Development mode - allowing blocked origin');
+      return callback(null, true);
+    }
+    
+    callback(new Error(`Origin ${origin} not allowed by CORS`));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
