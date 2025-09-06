@@ -73,11 +73,7 @@ app.options('*', cors(corsOptions));
 app.use((req, res, next) => {
   const csp = [
     "default-src 'self'",
-    "connect-src 'self' https://generativelanguage.googleapis.com " +
-    "https://sagradago.onrender.com " +               
-    "https://sagradago-backend.onrender.com " +      
-    "https://*.supabase.co wss://*.supabase.co " +
-    "https://*.google.com https://www.google.com/recaptcha/",
+    "connect-src 'self' https://generativelanguage.googleapis.com https://sagradago.onrender.com https://sagradago-backend.onrender.com https://*.supabase.co wss://*.supabase.co https://*.google.com https://www.google.com/recaptcha/",
     "script-src 'self' 'unsafe-inline' https://www.google.com/recaptcha/",
     "style-src 'self' 'unsafe-inline'",
     "frame-src https://www.google.com/recaptcha/",
