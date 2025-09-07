@@ -73,7 +73,7 @@ app.options('*', cors(corsOptions));
 app.use((req, res, next) => {
   const csp = [
     "default-src 'self'",
-    "connect-src 'self' https://generativelanguage.googleapis.com https://sagradago.onrender.com https://sagradago-backend.onrender.com https://*.supabase.co wss://*.supabase.co https://*.google.com https://www.google.com/recaptcha/",
+    "connect-src 'self' https://generativelanguage.googleapis.com https://*.sagradago.onrender.com https://*.sagradago-backend.onrender.com https://*.supabase.co wss://*.supabase.co https://*.google.com https://www.google.com/recaptcha/",
     "script-src 'self' 'unsafe-inline' https://www.google.com/recaptcha/",
     "style-src 'self' 'unsafe-inline'",
     "frame-src https://www.google.com/recaptcha/",
@@ -352,17 +352,11 @@ app.post('/api/verify-recaptcha', async (req, res) => {
  * GET /api/health
  */
 app.get('/api/health', async (req, res) => {
-  // const origin = req.get('origin');
-  // const normalizedOrigin = origin ? origin.toLowerCase() : '';
-  
-  // // Explicitly set CORS headers for health check
-  // if (origin && ALLOWED_ORIGINS.includes(normalizedOrigin)) {
-  //   res.header('Access-Control-Allow-Origin', origin);
-  //   res.header('Access-Control-Allow-Credentials', 'true');
-  // }
-  
-  console.log('🏥 [HEALTH CHECK] Request received from:', origin || 'unknown');
-  
+    const requestOrigin = req.get('origin');
+  console.log(
+    '🏥 [HEALTH CHECK] Request received from:',
+    requestOrigin || 'unknown'
+  );
   // Test API connectivity
   console.log('🏥 [HEALTH CHECK] Testing Gemini API connectivity...');
   const apiTest = await testGeminiAPI().catch((error) => {

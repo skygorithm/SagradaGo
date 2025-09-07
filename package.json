@@ -12,9 +12,6 @@
     "@supabase/supabase-js": "^2.56.0",
     "axios": "^1.7.7",
     "date-fns": "^2.30.0",
-    "concurrently": "^8.2.2",
-    "dotenv": "^16.4.5",
-    "http-proxy-middleware": "^3.0.5",
     "pannellum-react": "^1.3.6",
     "react": "^18.2.0",
     "react-big-calendar": "^1.19.2",
@@ -26,17 +23,43 @@
     "react-scripts": "5.0.1",
     "recharts": "^2.15.3",
     "uuid": "^11.1.0",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "http-proxy-middleware": "^3.0.5",
+    "serverless-http": "^3.2.0",
+    "cross-env": "^10.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "autoprefixer": "^10.4.14",
+    "chalk": "^5.6.0",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5.9.2",
+
+    "@babel/core": "^7.28.4",
+    "@babel/preset-env": "^7.28.3",
+    "@babel/register": "^7.28.3",
+
+    "concurrently": "^8.2.2"
   },
   "scripts": {
-    "start:backend": "set PORT=5001 && node server/server.js",
-    "start:frontend": "set PORT=5000 && node server.js",
-    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
-    "serve:api": "node -r @babel/register scripts/load-env.js && cross-env PORT=5001 node server/server.js",
-    "build": "npm install && react-scripts build && node scripts/copy-redirects.js",
+    "start": "node -r @babel/register scripts/load-env.js && cross-env PORT=5001 node server/server.js",
+    "start:backend": "cross-env PORT=5001 node -r @babel/register scripts/load-env.js server/server.js",
+    "start:frontend": "cross-env PORT=5000 react-scripts start",
+    "dev": "concurrently -k -p \"[{name}]\" -n \"API,WEB\" -c \"yellow.bold,cyan.bold\" \"npm run start:backend\" \"npm run start:frontend\"",
+    "build": "npm ci && react-scripts build && node scripts/copy-redirects.js",
+
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "dev": "concurrently -k -p \"[{name}]\" -n \"API,WEB\" -c \"yellow.bold,cyan.bold\" \"npm run serve:api\" \"cross-env PORT=3000 react-scripts start\"",
+
     "heroku-postbuild": "npm run build",
     "postinstall": "npm run build:functions || exit 0",
     "build:functions": "node scripts/build-functions.js"
@@ -58,27 +81,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "@babel/core": "^7.28.4",
-    "@babel/preset-env": "^7.28.3",
-    "@babel/register": "^7.28.3",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@types/react": "^19.1.12",
-    "@types/react-dom": "^19.1.9",
-    "autoprefixer": "^10.4.14",
-    "chalk": "^5.6.0",
-    "concurrently": "^8.2.2",
-    "cors": "^2.8.5",
-    "cross-env": "^10.0.0",
-    "dotenv": "^16.6.1",
-    "express": "^4.21.2",
-    "postcss": "^8.4.31",
-    "serverless-http": "^3.2.0",
-    "tailwindcss": "^3.3.0",
-    "typescript": "^5.9.2"
   },
   "proxy": "http://localhost:5001"
 }
