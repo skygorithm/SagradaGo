@@ -3,50 +3,84 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: '#6B5F32', // deep brown
+      contrastText: '#fff',
     },
     secondary: {
-      main: '#dc004e',
+      main: '#E1D5B8', // beige
+      contrastText: '#000',
     },
-    background: {
-      default: '#f5f5f5',
+    error: {
+      main: '#dc2626', // red
+      contrastText: '#fff',
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          fontWeight: 600,
+          textTransform: 'none',
+        },
+        containedPrimary: {
+          backgroundColor: '#6B5F32',
+          color: '#fff',
+          '&:hover': {
+            backgroundColor: '#574a26',
+          },
+        },
+        containedSecondary: {
+          backgroundColor: '#E1D5B8',
+          color: '#000',
+          '&:hover': {
+            backgroundColor: '#d4c4a1',
+          },
+        },
+        containedError: {
+          backgroundColor: '#dc2626',
+          color: '#fff',
+          '&:hover': {
+            backgroundColor: '#b91c1c',
+          },
+        },
+        outlinedPrimary: {
+          borderColor: '#6B5F32',
+          color: '#6B5F32',
+          '&:hover': {
+            borderColor: '#574a26',
+            backgroundColor: '#f3f1eb',
+          },
+        },
+        outlinedSecondary: {
+          borderColor: '#E1D5B8',
+          color: '#000',
+          '&:hover': {
+            borderColor: '#d4c4a1',
+            backgroundColor: '#faf7f2',
+          },
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          '&.Mui-error': {
+            color: '#dc2626',
+            '&:hover': {
+              color: '#b91c1c',
+            },
+          },
+        },
+      },
     },
   },
   typography: {
-    fontFamily: [
-      '-apple-system',
-      'BlinkMacSystemFont',
-      '"Segoe UI"',
-      'Roboto',
-      '"Helvetica Neue"',
-      'Arial',
-      'sans-serif',
-    ].join(','),
-  },
-  components: {
-    MuiDrawer: {
-      styleOverrides: {
-        paper: {
-          backgroundColor: '#1976d2',
-          color: 'white',
-        },
-      },
-    },
-    MuiListItemIcon: {
-      styleOverrides: {
-        root: {
-          color: 'rgba(255, 255, 255, 0.7)',
-        },
-      },
-    },
-    MuiListItemText: {
-      styleOverrides: {
-        primary: {
-          color: 'white',
-        },
-      },
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    button: {
+      fontWeight: 600,
     },
   },
 });
 
-export default theme; 
+export default theme;

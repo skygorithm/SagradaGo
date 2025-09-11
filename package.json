@@ -50,20 +50,18 @@
 
     "concurrently": "^8.2.2"
   },
-  "scripts": {
-    "start": "node -r @babel/register scripts/load-env.js && cross-env PORT=5001 node server/server.js",
-    "start:backend": "cross-env PORT=5001 node -r @babel/register scripts/load-env.js server/server.js",
-    "start:frontend": "cross-env PORT=5000 react-scripts start",
-    "dev": "concurrently -k -p \"[{name}]\" -n \"API,WEB\" -c \"yellow.bold,cyan.bold\" \"npm run start:backend\" \"npm run start:frontend\"",
-    "build": "npm ci && react-scripts build && node scripts/copy-redirects.js",
-
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-
-    "heroku-postbuild": "npm run build",
-    "postinstall": "npm run build:functions || exit 0",
-    "build:functions": "node scripts/build-functions.js"
-  },
+"scripts": {
+  "start": "node -r @babel/register scripts/load-env.js && cross-env PORT=5001 node server/server.js",
+  "start:backend": "cross-env PORT=5001 node -r @babel/register scripts/load-env.js server/server.js",
+  "start:frontend": "cross-env PORT=5000 react-scripts start",
+  "dev": "concurrently -p \"[{name}]\" -n \"API,WEB\" -c \"yellow.bold,cyan.bold\" \"npm run start:backend\" \"npm run start:frontend\"",
+  "build": "npm ci && react-scripts build && node scripts/copy-redirects.js",
+  "test": "react-scripts test",
+  "eject": "react-scripts eject",
+  "heroku-postbuild": "npm run build",
+  "postinstall": "npm run build:functions || exit 0",
+  "build:functions": "node scripts/build-functions.js"
+},
   "eslintConfig": {
     "extends": [
       "react-app",
