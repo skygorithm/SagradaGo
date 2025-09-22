@@ -19,10 +19,22 @@ const AdminSacramentDialog = ({
 }) => {
     const [displaySacrament, setDisplaySacrament] = useState('');
     const [isIDProcessing, setIsIDProcessing] = useState(false);
+    
     useEffect(() => {
         const sac = getDisplaySacrament(sacrament);
         setDisplaySacrament(sac);
     }, [sacrament]);
+
+    // Initialize form data when dialog opens
+    useEffect(() => {
+        if (openDialog && !editingRecord) {
+            // For new records, ensure booking_status has a default value
+            setFormData(prev => ({
+                ...prev,
+                booking_status: prev.booking_status || 'pending'
+            }));
+        }
+    }, [openDialog, editingRecord, setFormData]);
 
     const hiddenInputRef1 = useRef(null);
     const [residentForm, setResidentForm] = useState({
@@ -43,7 +55,7 @@ const AdminSacramentDialog = ({
     });
 
     // For Wedding Document Variables
-      const [weddingForm, setWeddingForm] = useState({
+    const [weddingForm, setWeddingForm] = useState({
         groom_fullname: '',
         bride_fullname: '',
         contact_no: '',
@@ -61,61 +73,36 @@ const AdminSacramentDialog = ({
         bride_banns: null,
         groom_permission: null,
         bride_permission: null,
-      });
+    });
     
     useEffect(() => {
         setFormData((prev) => ({
             ...prev,
             weddingForm: weddingForm,
         }));
-    }, [weddingForm]);
+    }, [weddingForm, setFormData]);
 
     useEffect(() => {
         setFormData((prev) => ({
             ...prev,
             burialForm: burialForm,
         }));
-    }, [burialForm]);
+    }, [burialForm, setFormData]);
 
     useEffect(() => {
         setFormData((prev) => ({
             ...prev,
             baptismForm: baptismForm,
         }));
-    }, [baptismForm]);
+    }, [baptismForm, setFormData]);
     
-
-    // const handleChangeID = async (event, def=true, setForm = null, key=null) => {
-    //     const fileUploaded = event.target.files[0];
-    //     if (fileUploaded) {
-    //         setIsIDProcessing(true);
-    //         try {
-    //             const url = URL.createObjectURL(fileUploaded);
-    //             setForm((prev => ({ ...prev, id: url })));
-    //             if (def) {
-    //                 setFormData((prev) => ({
-    //                     ...prev,
-    //                     document: url,
-    //                 }));
-    //             } else {
-    //                 setFormData((prev) => ({
-    //                     ...prev,
-    //                     [key]: url,
-    //                 }));
-    //             }
-                
-    //         } catch (error) {
-    //             console.error("Error removing background:", error);
-    //         } finally {
-    //             setIsIDProcessing(false);
-    //         }
-    //     }
-    // };
-
-    // const handleUploadID = (event, inputRef = null) => {
-    //     inputRef.current.click();
-    // };
-
+    // Handle form field changes
+    const handleFieldChange = (field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
 
     return (
         <Dialog 
@@ -133,23 +120,23 @@ const AdminSacramentDialog = ({
                     <Grid container spacing={2}>
                         <Grid item xs={12} sm={6}>
                             <TextField
-                            fullWidth
-                            select
-                            label="User"
-                            value={formData.user_id || ''}
-                            onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
-                            required
-                            margin="dense"
-                            InputLabelProps={{ shrink: true }}
-                            SelectProps={{ native: true }}
-                            disabled={editingRecord}
+                                fullWidth
+                                select
+                                label="User"
+                                value={formData.user_id || ''}
+                                onChange={(e) => handleFieldChange('user_id', e.target.value)}
+                                required
+                                margin="dense"
+                                InputLabelProps={{ shrink: true }}
+                                SelectProps={{ native: true }}
+                                disabled={editingRecord}
                             >
-                            <option value="">Select a user</option>
-                            {users.map((user) => (
-                                <option key={user.id} value={user.id}>
-                                {user.user_firstname} {user.user_lastname} ({user.user_email})
-                                </option>
-                            ))}
+                                <option value="">Select a user</option>
+                                {users.map((user) => (
+                                    <option key={user.id} value={user.id}>
+                                        {user.user_firstname} {user.user_lastname} ({user.user_email})
+                                    </option>
+                                ))}
                             </TextField>
                         </Grid>
                         <Grid item xs={12} sm={6}>
@@ -164,7 +151,7 @@ const AdminSacramentDialog = ({
                                 disabled
                                 sx={{
                                     '& .MuiInputBase-input.Mui-disabled': {
-                                    WebkitTextFillColor: '#000000',
+                                        WebkitTextFillColor: '#000000',
                                     },
                                 }}
                             />
@@ -175,7 +162,7 @@ const AdminSacramentDialog = ({
                                 label="Date"
                                 type="date"
                                 value={formData.booking_date || ''}
-                                onChange={(e) => setFormData({ ...formData, booking_date: e.target.value })}
+                                onChange={(e) => handleFieldChange('booking_date', e.target.value)}
                                 required
                                 margin="dense"
                                 InputLabelProps={{ shrink: true }}
@@ -188,7 +175,7 @@ const AdminSacramentDialog = ({
                                 label="Time"
                                 type="time"
                                 value={formData.booking_time || ''}
-                                onChange={(e) => setFormData({ ...formData, booking_time: e.target.value })}
+                                onChange={(e) => handleFieldChange('booking_time', e.target.value)}
                                 required
                                 margin="dense"
                                 InputLabelProps={{ shrink: true }}
@@ -201,7 +188,7 @@ const AdminSacramentDialog = ({
                                 label="Number of People"
                                 type="number"
                                 value={formData.booking_pax || ''}
-                                onChange={(e) => setFormData({ ...formData, booking_pax: e.target.value })}
+                                onChange={(e) => handleFieldChange('booking_pax', e.target.value)}
                                 required
                                 margin="dense"
                                 InputLabelProps={{ shrink: true }}
@@ -213,16 +200,23 @@ const AdminSacramentDialog = ({
                                 fullWidth
                                 select
                                 label="Status"
-                                value={formData.booking_status || (editingRecord ? '' : 'pending')}
-                                onChange={(e) => setFormData({ ...formData, booking_status: e.target.value })}
+                                value={formData.booking_status || 'pending'}
+                                onChange={(e) => {
+                                    console.log('Status changed to:', e.target.value); // Debug log
+                                    handleFieldChange('booking_status', e.target.value);
+                                }}
                                 required
                                 margin="dense"
                                 InputLabelProps={{ shrink: true }}
                                 SelectProps={{ native: true }}
-                                >
+                            >
                                 <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
                                 <option value="approved">Approved</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
                                 <option value="rejected">Rejected</option>
+                                <option value="draft">Draft</option>
                             </TextField>
                         </Grid>
                         <Grid item xs={12}>
@@ -235,7 +229,7 @@ const AdminSacramentDialog = ({
                                 disabled
                                 sx={{
                                     '& .MuiInputBase-input.Mui-disabled': {
-                                    WebkitTextFillColor: '#000000',
+                                        WebkitTextFillColor: '#000000',
                                     },
                                 }}
                             />
@@ -246,13 +240,13 @@ const AdminSacramentDialog = ({
                                     fullWidth
                                     select
                                     label="Is Service Fee Paid?"
-                                    value={formData.paid || (editingRecord ? '' : false)}
-                                    onChange={(e) => setFormData({ ...formData, paid: e.target.value === 'true' })}
+                                    value={formData.paid !== undefined ? formData.paid.toString() : ''}
+                                    onChange={(e) => handleFieldChange('paid', e.target.value === 'true')}
                                     required
                                     margin="dense"
                                     InputLabelProps={{ shrink: true }}
                                     SelectProps={{ native: true }}
-                                    >
+                                >
                                     <option value="">Select Payment Status</option>
                                     <option value="true">Paid</option>
                                     <option value="false">Not Yet Paid</option>
@@ -260,30 +254,34 @@ const AdminSacramentDialog = ({
                             </Grid>
                         )}
                     </Grid>
-                    {/* {!editingRecord && (
-                        <Grid container spacing={3}>
-                            <Grid item xs={12}>
-                                <UploadImage
-                                    hiddenInputRef1={hiddenInputRef1}
-                                    handleUploadID={(e) => handleUploadID(e, hiddenInputRef1)}
-                                    handleChangeID={(e) => handleChangeID(e, true, setResidentForm)}
-                                    isIDProcessing={isIDProcessing}
-                                    residentForm={residentForm}
-                                />
-                            </Grid>
-                        </Grid>
-                    )} */}
 
-                    {!editingRecord && sacrament === 'wedding' ? (
+                    {/* Document components for different sacraments */}
+                    {!editingRecord && sacrament === 'wedding' && (
                         <WeddingDocuments weddingForm={weddingForm} setWeddingForm={setWeddingForm} />
-                    ) : !editingRecord && sacrament === 'baptism' ? (
+                    )}
+                    
+                    {!editingRecord && sacrament === 'baptism' && (
                         <BaptismDocuments baptismForm={baptismForm} setBaptismForm={setBaptismForm} />
-                    ) : !editingRecord && sacrament === 'burial' ? (
+                    )}
+                    
+                    {!editingRecord && sacrament === 'burial' && (
                         <BurialDocuments burialForm={burialForm} setBurialForm={setBurialForm} />
-                    ) : null}
+                    )}
+
+                    {/* Debug information - remove in production */}
+                    {process.env.NODE_ENV === 'development' && (
+                        <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
+                            <strong>Debug Info:</strong>
+                            <br />
+                            Current booking_status: {formData.booking_status || 'undefined'}
+                            <br />
+                            Form data keys: {Object.keys(formData).join(', ')}
+                        </Box>
+                    )}
+
                     {error && (
                         <Alert severity="error" sx={{ mb: 2 }}>
-                        {error}
+                            {error}
                         </Alert>
                     )}
                 </Box>

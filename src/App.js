@@ -1,11 +1,18 @@
 // src/App.js
-import React, { useState, useEffect, lazy, Suspense, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  lazy,
+  Suspense,
+} from "react";
+import { PopupsProvider } from "./context/PopupsContext";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
-  useNavigate,
   Navigate,
+  useNavigate,
 } from "react-router-dom";
 import { CircularProgress, Box } from "@mui/material";
 
@@ -15,20 +22,22 @@ import { supabase } from "./config/supabase";
 import ProtectedRoute from "./config/ProtectedRoute";
 import HomePageLoggedIn from "./pages/HomepageLoggedIn";
 
-const HomePageLoggedOut = lazy(() =>
-  import("./pages/HomePageLoggedOut")
-);
+// Lazy‐loaded pages
+const HomePageLoggedOut = lazy(() => import("./pages/HomePageLoggedOut"));
 const EventsPage = lazy(() => import("./pages/EventsPage"));
+const ExploreParish = lazy(() => import("./pages/ExploreParish"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const MyHistory = lazy(() => import("./pages/MyHistory"));
+const BookingList = lazy(() => import("./pages/BookingList"));
+const DonationHistory = lazy(() => import("./pages/DonationHistory"));
+const SetPasswordPage = lazy(() => import("./pages/SetPasswordPage"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const ApprovedBookingsCalendar = lazy(() =>
   import("./pages/ApprovedBookingsCalendar")
 );
-const ExploreParish = lazy(() => import("./pages/ExploreParish"));
-const SetPasswordPage = lazy(() => import("./pages/SetPasswordPage"));
 
-// Loading component
+// Simple loading spinner
 const LoadingFallback = () => (
   <Box
     display="flex"
@@ -48,8 +57,8 @@ const AppContent = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { isAdmin, loading: adminLoading } = useAdminAuth();
 
+  // Sign out
   const handleLogout = useCallback(async () => {
-    console.log("Logging out...");
     await supabase.auth.signOut();
     localStorage.removeItem("isAuthenticated");
     localStorage.removeItem("userData");
@@ -57,9 +66,17 @@ const AppContent = () => {
     navigate("/");
   }, [navigate]);
 
+  // Centralized “show login/signup” helper
+  const handleShowLogin = (signup = false) => {
+    setIsSignupMode(signup);
+    setShowLogin(true);
+  };
+
+  // Check Supabase session & localStorage
   useEffect(() => {
     let mounted = true;
     setIsLoading(true);
+
     const checkAuth = async () => {
       try {
         const cachedAuth = localStorage.getItem("isAuthenticated");
@@ -103,8 +120,8 @@ const AppContent = () => {
             localStorage.setItem("userData", JSON.stringify(userData));
           }
         }
-      } catch (error) {
-        console.error("Error in auth check:", error);
+      } catch (err) {
+        console.error("Error in auth check:", err);
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -112,9 +129,10 @@ const AppContent = () => {
 
     checkAuth();
 
+    // Listen for Supabase auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === "SIGNED_IN" || event === "USER_UPDATED") {
         await checkAuth();
       } else if (event === "SIGNED_OUT") {
@@ -131,6 +149,7 @@ const AppContent = () => {
     };
   }, [navigate]);
 
+  // Redirect between “/” and “/home”
   useEffect(() => {
     if (isLoading) return;
     if (isAuthenticated && window.location.pathname === "/") {
@@ -140,6 +159,7 @@ const AppContent = () => {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
+  // After successful login
   const handleLoginSuccess = (userData) => {
     setIsAuthenticated(true);
     localStorage.setItem("isAuthenticated", "true");
@@ -155,45 +175,109 @@ const AppContent = () => {
     <>
       {!isAuthenticated && showLogin && (
         <LoginModal
-          onLoginSuccess={handleLoginSuccess}
+          open={showLogin}
           onClose={() => {
             setShowLogin(false);
             setIsSignupMode(false);
           }}
+          onLoginSuccess={handleLoginSuccess}
           isSignupMode={isSignupMode}
         />
       )}
+
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
+          {/* Public landing */}
           <Route
             path="/"
             element={
               <HomePageLoggedOut
-                onLoginClick={(signup = false) => {
-                  setIsSignupMode(signup);
-                  setShowLogin(true);
-                }}
+                onLoginClick={() => handleShowLogin(false)}
+                onSignupClick={() => handleShowLogin(true)}
+              />
+            }
+          />
+
+          {/* Public pages */}
+          <Route
+            path="/events"
+            element={
+              <EventsPage
+                isLoggedIn={isAuthenticated}
+                onLogout={handleLogout}
+                onLoginClick={() => handleShowLogin(false)}
+                onSignupClick={() => handleShowLogin(true)}
               />
             }
           />
           <Route
+            path="/explore-parish"
+            element={
+              <ExploreParish
+                isLoggedIn={isAuthenticated}
+                onLogout={handleLogout}
+                onLoginClick={() => handleShowLogin(false)}
+                onSignupClick={() => handleShowLogin(true)}
+              />
+            }
+          />
+
+          {/* Protected user routes */}
+          <Route
             path="/home"
             element={
-              <ProtectedRoute onLoginClick={() => setShowLogin(true)}>
-                <HomePageLoggedIn onLogout={handleLogout} />
+              <ProtectedRoute onLoginClick={() => handleShowLogin(false)}>
+                <HomePageLoggedIn
+                  onLogout={handleLogout}
+                  isLoggedIn={isAuthenticated}
+                />
               </ProtectedRoute>
             }
           />
-          <Route path="/events" element={<EventsPage />} />
+
           <Route
             path="/profile"
             element={
-              <ProtectedRoute onLoginClick={() => setShowLogin(true)}>
-                <ProfilePage onLogout={handleLogout} />
+              <ProtectedRoute onLoginClick={() => handleShowLogin(false)}>
+                <ProfilePage
+                  onLogout={handleLogout}
+                  isLoggedIn={isAuthenticated}
+                />
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute onLoginClick={() => handleShowLogin(false)}>
+                <MyHistory />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/bookings"
+            element={
+              <ProtectedRoute onLoginClick={() => handleShowLogin(false)}>
+                <BookingList />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/donations"
+            element={
+              <ProtectedRoute onLoginClick={() => handleShowLogin(false)}>
+                <DonationHistory />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Password reset (public) */}
           <Route path="/set-password" element={<SetPasswordPage />} />
+
+          {/* Admin */}
           <Route
             path="/admin/login"
             element={isAdmin ? <Navigate to="/admin" /> : <AdminLogin />}
@@ -214,7 +298,6 @@ const AppContent = () => {
               isAdmin ? <AdminDashboard /> : <Navigate to="/admin/login" />
             }
           />
-          <Route path="/explore-parish" element={<ExploreParish />} />
         </Routes>
       </Suspense>
     </>
@@ -223,7 +306,9 @@ const AppContent = () => {
 
 const App = () => (
   <Router>
-    <AppContent />
+    <PopupsProvider>
+      <AppContent />
+    </PopupsProvider>
   </Router>
 );
 

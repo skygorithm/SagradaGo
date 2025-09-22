@@ -1,6 +1,6 @@
 // src/components/dashboard/DataAnalyticsDashboard.jsx
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Typography,
   Grid,
@@ -11,6 +11,8 @@ import {
   DialogTitle,
   DialogContent,
   IconButton,
+  Tooltip,
+  Box,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import {
@@ -22,8 +24,8 @@ import {
   LineChart,
   XAxis,
   YAxis,
-  Tooltip,
   ResponsiveContainer,
+  Tooltip as RechartsTooltip,
 } from "recharts";
 import { BarChartLegend } from "../ChartLegends";
 
@@ -60,11 +62,8 @@ const monthNames = [
   "Dec",
 ];
 
-const safe = (obj, path, fallback = "—") => {
-  return (
-    path.split(".").reduce((acc, key) => acc?.[key], obj) ?? fallback
-  );
-};
+const safe = (obj, path, fallback = "—") =>
+  path.split(".").reduce((acc, key) => acc?.[key], obj) ?? fallback;
 
 const pesoFormat = (val) =>
   isNaN(val) || val === null || val === undefined
@@ -75,6 +74,18 @@ const pesoFormat = (val) =>
         minimumFractionDigits: 2,
       }).format(val);
 
+const isCompletedStatus = (status) => {
+  if (!status) return false;
+  const statusLower = String(status).toLowerCase().trim();
+  return ["completed", "approved", "confirmed", "done", "finished", "success"].includes(statusLower);
+};
+
+const isPendingStatus = (status) => {
+  if (!status) return false;
+  const statusLower = String(status).toLowerCase().trim();
+  return ["pending", "waiting", "submitted", "review"].includes(statusLower);
+};
+
 const DataAnalyticsDashboard = ({
   stats = {},
   allBookings = [],
@@ -82,81 +93,193 @@ const DataAnalyticsDashboard = ({
   setCurrentView,
   handleSacramentTableSelect,
   onShowPending,
+  setSacramentActiveFilters, 
 }) => {
   const [openNoPending, setOpenNoPending] = useState(false);
 
-  /** ---------- Derived Values ---------- **/
+  useEffect(() => {
+    console.log("Dashboard Debug Info:");
+    console.log("Stats:", stats);
+    console.log("All bookings:", allBookings?.length || 0);
+  }, [stats, allBookings]);
+
   const {
-    approvedCount,
+    completedCount,
     pendingCount,
     mostCommonSacrament,
     monthlyFrequency,
   } = useMemo(() => {
-    const approved = allBookings.filter(
-      (b) => b.booking_status?.toLowerCase() === "approved"
+    const bookingsArray = Array.isArray(allBookings) ? allBookings : [];
+
+    const completed = bookingsArray.filter((b) =>
+      isCompletedStatus(b.booking_status)
     );
-    const pending = allBookings.filter(
-      (b) => b.booking_status?.toLowerCase() === "pending"
+    const pending = bookingsArray.filter((b) =>
+      isPendingStatus(b.booking_status)
     );
 
     const sacCounts = {};
-    allBookings.forEach((b) => {
-      sacCounts[b.booking_sacrament] =
-        (sacCounts[b.booking_sacrament] || 0) + 1;
+    bookingsArray.forEach((b) => {
+      if (b.booking_sacrament) {
+        sacCounts[b.booking_sacrament] =
+          (sacCounts[b.booking_sacrament] || 0) + 1;
+      }
     });
-
     const mostCommon =
       Object.entries(sacCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
 
+    // Filter bookings to current year only
+    const currentYear = new Date().getFullYear();
     const monthlyCounts = {};
-    allBookings.forEach((b) => {
+    bookingsArray.forEach((b) => {
       if (!b.booking_date) return;
       const d = new Date(b.booking_date);
-      if (isNaN(d)) return;
-      const month = monthNames[d.getMonth()];
-      monthlyCounts[month] = (monthlyCounts[month] || 0) + 1;
+      if (!isNaN(d.getTime()) && d.getFullYear() === currentYear) {
+        const month = monthNames[d.getMonth()];
+        monthlyCounts[month] = (monthlyCounts[month] || 0) + 1;
+      }
     });
-
     const monthlyArray = monthNames.map((m) => ({
       month: m,
       count: monthlyCounts[m] || 0,
     }));
 
     return {
-      approvedCount: stats.approvedBookings ?? approved.length,
+      completedCount: stats.completedBookings ?? completed.length,
       pendingCount: stats.pendingBookings ?? pending.length,
       mostCommonSacrament: stats.mostCommonSacrament || mostCommon,
       monthlyFrequency: monthlyArray,
     };
   }, [allBookings, stats]);
 
-  /** ---------- Charts ---------- **/
+  const completedBySacramentData = useMemo(() => {
+    const bookingsArray = Array.isArray(allBookings) ? allBookings : [];
 
-  // Completed bookings by sacrament
-  const renderCompletedBarChart = () => {
-    const approvedBySacrament = ALL_SACRAMENTS.map((sacrament) => {
-      const found = (stats?.approvedBySacrament || []).find(
+    return ALL_SACRAMENTS.map((sacrament) => {
+      const computedCount = bookingsArray.filter(
+        (b) =>
+          isCompletedStatus(b.booking_status) &&
+          b.booking_sacrament === sacrament
+      ).length;
+
+      const statItem = stats.completedBySacrament?.find(
         (item) => item.sacrament === sacrament
       );
-      return found || { sacrament, count: 0 };
-    });
 
+      return {
+        sacrament,
+        // Truncate long sacrament names for better display
+        displayName: sacrament.length > 12 ? `${sacrament.substring(0, 10)}...` : sacrament,
+        count: statItem?.count ?? computedCount,
+      };
+    });
+  }, [allBookings, stats.completedBySacrament]);
+
+  const monthlyData = useMemo(() => {
+    // Force recalculation from allBookings to ensure current year only
+    const bookingsArray = Array.isArray(allBookings) ? allBookings : [];
+    const currentYear = new Date().getFullYear(); // Should be 2025
+    
+    // Recalculate monthly counts for current year only
+    const currentYearMonthlyCounts = {};
+    bookingsArray.forEach((b) => {
+      if (!b.booking_date) return;
+      const d = new Date(b.booking_date);
+      if (!isNaN(d.getTime())) {
+        const bookingYear = d.getFullYear();
+        
+        // Only count if it's exactly the current year (2025)
+        if (bookingYear === currentYear) {
+          const month = monthNames[d.getMonth()];
+          currentYearMonthlyCounts[month] = (currentYearMonthlyCounts[month] || 0) + 1;
+        }
+      }
+    });
+    
+    // Return only current year data - ignore any stats.bookingsByMonth completely
+    return monthNames.map((m) => ({
+      month: m,
+      count: currentYearMonthlyCounts[m] || 0,
+    }));
+  }, [allBookings]);
+
+  const monthlyDonationsData = useMemo(() => {
+    if (Array.isArray(stats.monthlyDonations) && stats.monthlyDonations.length > 0) {
+      return stats.monthlyDonations.map((d) => ({
+        month: d.month,
+        amount: typeof d.amount === "number" ? d.amount : 0,
+      }));
+    }
+    return monthNames.map((m) => ({ month: m, amount: 0 }));
+  }, [stats.monthlyDonations]);
+
+  const donationSummaryData = useMemo(() => {
+    return stats.donationSummary || {
+      today: 0,
+      lastWeek: 0,
+      thisMonth: 0,
+      average: 0,
+      yearTotal: 0,
+    };
+  }, [stats.donationSummary]);
+
+  // Updated function to handle showing pending bookings with filter
+  const handleShowPending = () => {
+    if (pendingCount > 0) {
+      // Just use the prop - no need for fallback logic
+      onShowPending?.();
+    } else {
+      setOpenNoPending(true);
+    }
+  };
+
+  const renderCompletedBarChart = () => {
     return (
-      <ResponsiveContainer width="100%" height={250}>
-        <BarChart data={approvedBySacrament}>
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart 
+          data={completedBySacramentData}
+          margin={{ 
+            top: 20, 
+            right: 30, 
+            left: 20, 
+            bottom: isMobile ? 100 : 80 
+          }}
+        >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="sacrament" fontSize={isMobile ? 10 : 12} />
-          <YAxis fontSize={isMobile ? 10 : 12} allowDecimals={false} />
-          <Tooltip />
+          <XAxis
+            dataKey="displayName"
+            fontSize={isMobile ? 9 : 11}
+            angle={-45}
+            textAnchor="end"
+            height={isMobile ? 100 : 80}
+            interval={0}
+            tick={{ fontSize: isMobile ? 9 : 11 }}
+          />
+          <YAxis 
+            fontSize={isMobile ? 10 : 12} 
+            allowDecimals={false}
+            tick={{ fontSize: isMobile ? 10 : 12 }}
+          />
+          <RechartsTooltip 
+            formatter={(value, name, props) => [value, props.payload.sacrament]}
+            labelFormatter={(label, payload) => {
+              if (payload && payload.length > 0) {
+                return payload[0].payload.sacrament;
+              }
+              return label;
+            }}
+          />
           <Bar
             dataKey="count"
-            onClick={(d) =>
-              d?.sacrament &&
-              setCurrentView?.("bookings") &&
-              handleSacramentTableSelect?.(d.sacrament.toLowerCase())
-            }
+            onClick={(data) => {
+              if (data?.sacrament) {
+                setCurrentView?.("bookings");
+                handleSacramentTableSelect?.(data.sacrament.toLowerCase());
+              }
+            }}
+            cursor="pointer"
           >
-            {approvedBySacrament.map((entry, idx) => (
+            {completedBySacramentData.map((entry, idx) => (
               <Cell
                 key={`bar-${entry.sacrament}`}
                 fill={CHART_COLORS[idx % CHART_COLORS.length]}
@@ -168,18 +291,33 @@ const DataAnalyticsDashboard = ({
     );
   };
 
-  // Frequency of bookings by month
   const renderMonthlyBarChart = () => {
-    const dataset = stats.bookingsByMonth || monthlyFrequency;
     return (
-      <ResponsiveContainer width="100%" height={250}>
-        <BarChart data={dataset}>
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart 
+          key={`monthly-chart-${JSON.stringify(monthlyData)}`}
+          data={monthlyData}
+          margin={{ 
+            top: 20, 
+            right: 30, 
+            left: 20, 
+            bottom: 20 
+          }}
+        >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="month" fontSize={isMobile ? 10 : 12} />
-          <YAxis fontSize={isMobile ? 10 : 12} allowDecimals={false} />
-          <Tooltip />
+          <XAxis 
+            dataKey="month" 
+            fontSize={isMobile ? 10 : 12}
+            tick={{ fontSize: isMobile ? 10 : 12 }}
+          />
+          <YAxis 
+            fontSize={isMobile ? 10 : 12} 
+            allowDecimals={false}
+            tick={{ fontSize: isMobile ? 10 : 12 }}
+          />
+          <RechartsTooltip />
           <Bar dataKey="count">
-            {dataset.map((entry, idx) => (
+            {monthlyData.map((entry, idx) => (
               <Cell
                 key={`month-${entry.month}`}
                 fill={CHART_COLORS[idx % CHART_COLORS.length]}
@@ -191,68 +329,165 @@ const DataAnalyticsDashboard = ({
     );
   };
 
-  // Monthly donations
-  const renderLineChart = () => (
-    <ResponsiveContainer width="100%" height={250}>
-      <LineChart data={safe(stats, "monthlyDonations", [])}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="month" fontSize={isMobile ? 10 : 12} />
-        <YAxis fontSize={isMobile ? 10 : 12} />
-        <Tooltip formatter={(val) => pesoFormat(val)} />
-        <Line type="monotone" dataKey="amount" stroke={CHART_COLORS[1]} />
-      </LineChart>
-    </ResponsiveContainer>
-  );
+  const renderLineChart = () => {
+    return (
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart 
+          data={monthlyDonationsData}
+          margin={{ 
+            top: 20, 
+            right: 30, 
+            left: 20, 
+            bottom: 20 
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis 
+            dataKey="month" 
+            fontSize={isMobile ? 10 : 12}
+            tick={{ fontSize: isMobile ? 10 : 12 }}
+          />
+          <YAxis 
+            fontSize={isMobile ? 10 : 12}
+            tick={{ fontSize: isMobile ? 10 : 12 }}
+          />
+          <RechartsTooltip formatter={(val) => pesoFormat(val)} />
+          <Line
+            type="monotone"
+            dataKey="amount"
+            stroke={CHART_COLORS[1]}
+            strokeWidth={2}
+            dot={{ fill: CHART_COLORS[1], r: 4 }}
+            activeDot={{ r: 6 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    );
+  };
 
-  /** ---------- Render ---------- **/
   return (
     <div style={{ padding: 16 }}>
-      {/* Overview Cards */}
+      {/* Statistics Cards Section */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {[
-          { label: "Total Users", value: safe(stats, "totalUsers") },
-          { label: "Total Documents", value: safe(stats, "totalDocuments") },
-          { label: "Completed Bookings", value: approvedCount },
-          { label: "Total Admins", value: safe(stats, "totalAdmins") },
-          { label: "Total Priests", value: safe(stats, "totalPriests") },
-          { label: "Available Priests", value: safe(stats, "availablePriests") },
-          {
-            label: "Most Common Sacrament",
-            value: mostCommonSacrament,
-          },
-        ].map((item) => (
-          <Grid item xs={12} sm={6} md={3} key={item.label}>
-            <Card elevation={3}>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  {item.label}
-                </Typography>
-                <Typography variant="h4">{item.value ?? "—"}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2}>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom variant="h6">
+                Total Users
+              </Typography>
+              <Typography variant="h4" component="div">
+                {stats.totalUsers ?? 0}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2}>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom variant="h6">
+                Total Documents
+              </Typography>
+              <Typography variant="h4" component="div">
+                {stats.totalDocuments ?? 0}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2}>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom variant="h6">
+                Completed Bookings
+              </Typography>
+              <Typography variant="h4" component="div">
+                {completedCount}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2}>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom variant="h6">
+                Total Admins
+              </Typography>
+              <Typography variant="h4" component="div">
+                {stats.totalAdmins ?? 0}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2}>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom variant="h6">
+                Total Priests
+              </Typography>
+              <Typography variant="h4" component="div">
+                {stats.totalPriests ?? 0}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2}>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom variant="h6">
+                Available Priests
+              </Typography>
+              <Typography variant="h4" component="div">
+                {stats.availablePriests ?? 0}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2}>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom variant="h6">
+                Most Common Sacrament
+              </Typography>
+              <Typography variant="h4" component="div">
+                {mostCommonSacrament}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card elevation={2}>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom variant="h6">
+                Pending Bookings
+              </Typography>
+              <Typography variant="h4" component="div" color="error">
+                {pendingCount}
+              </Typography>
+              {pendingCount > 0 && (
+                <Button
+                  size="small"
+                  color="error"
+                  variant="contained"
+                  sx={{ mt: 1 }}
+                  onClick={handleShowPending}
+                >
+                  View Pending ({pendingCount})
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
 
-      {/* Pending Bookings Button */}
-      <Button
-        variant="contained"
-        color={pendingCount > 0 ? "error" : "primary"}
-        onClick={() =>
-          pendingCount > 0 ? onShowPending?.() : setOpenNoPending(true)
-        }
-        sx={{ mb: 3 }}
-      >
-        Show Pending Bookings ({pendingCount})
-      </Button>
-
-      <Typography variant="h5" sx={{ mb: 2 }}>
-        Data Analytics
-      </Typography>
-
+      {/* Charts Section */}
       <Grid container spacing={3}>
-        {/* Completed Bookings by Sacrament */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} lg={6}>
           <Card elevation={2}>
             <CardContent>
               <Typography variant="h6" align="center" gutterBottom>
@@ -260,13 +495,9 @@ const DataAnalyticsDashboard = ({
               </Typography>
               {renderCompletedBarChart()}
               <BarChartLegend
-                data={ALL_SACRAMENTS.map((sacrament) => ({
-                  key: sacrament,
-                  name: sacrament,
-                  value:
-                    (stats?.approvedBySacrament || []).find(
-                      (item) => item.sacrament === sacrament
-                    )?.count || 0,
+                data={completedBySacramentData.map(item => ({
+                  ...item,
+                  sacrament: item.sacrament
                 }))}
                 colors={CHART_COLORS}
               />
@@ -274,27 +505,19 @@ const DataAnalyticsDashboard = ({
           </Card>
         </Grid>
 
-        {/* Frequency of Bookings by Month */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} lg={6}>
           <Card elevation={2}>
             <CardContent>
               <Typography variant="h6" align="center" gutterBottom>
-                Frequency of Bookings by Month
+                Frequency of Bookings by Month ({new Date().getFullYear()})
               </Typography>
               {renderMonthlyBarChart()}
-              <BarChartLegend
-                data={(stats.bookingsByMonth || monthlyFrequency).map((m) => ({
-                  name: m.month,
-                  value: m.count,
-                }))}
-                colors={CHART_COLORS}
-              />
+              <BarChartLegend data={monthlyData} colors={CHART_COLORS} />
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Monthly Donations */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} lg={6}>
           <Card elevation={2}>
             <CardContent>
               <Typography variant="h6" align="center" gutterBottom>
@@ -305,70 +528,79 @@ const DataAnalyticsDashboard = ({
           </Card>
         </Grid>
 
-        {/* Donation Summary */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} lg={6}>
           <Card elevation={2}>
             <CardContent>
               <Typography variant="h6" align="center" gutterBottom>
                 Donation Summary
               </Typography>
-              <table className="min-w-full border-separate border-spacing-0 rounded-2xl overflow-hidden shadow-sm">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">
-                      Donation Period
-                    </th>
-                    <th className="px-2 md:px-4 py-2 border text-xs md:text-sm">
-                      Amount
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    {
-                      label: "Today",
-                      value: pesoFormat(safe(stats, "donationSummary.today", 0)),
-                    },
-                    {
-                      label: "Past 7 Days",
-                      value: pesoFormat(
-                        safe(stats, "donationSummary.lastWeek", 0)
-                      ),
-                    },
-                    {
-                      label: "This Month",
-                      value: pesoFormat(
-                        safe(stats, "donationSummary.thisMonth", 0)
-                      ),
-                    },
-                    {
-                      label: "Monthly Average",
-                      value: pesoFormat(safe(stats, "donationSummary.average", 0)),
-                    },
-                    {
-                      label: "Year‑to‑Date Total",
-                      value: pesoFormat(
-                        safe(stats, "donationSummary.yearTotal", 0)
-                      ),
-                    },
-                  ].map((row) => (
-                    <tr key={row.label}>
-                      <td className="px-2 md:px-4 py-2 border text-left text-xs md:text-sm">
-                        {row.label}
-                      </td>
-                      <td className="px-2 md:px-4 py-2 border font-bold text-xs md:text-sm">
-                        {row.value}
-                      </td>
+              <Box sx={{ overflowX: 'auto' }}>
+                <table style={{ 
+                  width: '100%', 
+                  borderCollapse: 'separate', 
+                  borderSpacing: 0, 
+                  borderRadius: '8px', 
+                  overflow: 'hidden', 
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)' 
+                }}>
+                  <thead style={{ backgroundColor: '#f5f5f5' }}>
+                    <tr>
+                      <th style={{ 
+                        padding: '8px 16px', 
+                        border: '1px solid #ddd', 
+                        textAlign: 'left', 
+                        fontSize: isMobile ? '12px' : '14px' 
+                      }}>
+                        Donation Period
+                      </th>
+                      <th style={{ 
+                        padding: '8px 16px', 
+                        border: '1px solid #ddd', 
+                        textAlign: 'right', 
+                        fontSize: isMobile ? '12px' : '14px' 
+                      }}>
+                        Amount
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {[
+                      { label: "Today", value: pesoFormat(donationSummaryData.today) },
+                      { label: "Past 7 Days", value: pesoFormat(donationSummaryData.lastWeek) },
+                      { label: "This Month", value: pesoFormat(donationSummaryData.thisMonth) },
+                      { label: "Monthly Average", value: pesoFormat(donationSummaryData.average) },
+                      { label: "Year-to-Date Total", value: pesoFormat(donationSummaryData.yearTotal) },
+                    ].map((row, index) => (
+                      <tr key={row.label} style={{ 
+                        backgroundColor: index % 2 === 0 ? '#fafafa' : 'white' 
+                      }}>
+                        <td style={{ 
+                          padding: '8px 16px', 
+                          border: '1px solid #ddd', 
+                          textAlign: 'left', 
+                          fontSize: isMobile ? '12px' : '14px' 
+                        }}>
+                          {row.label}
+                        </td>
+                        <td style={{ 
+                          padding: '8px 16px', 
+                          border: '1px solid #ddd', 
+                          fontWeight: 'bold', 
+                          textAlign: 'right', 
+                          fontSize: isMobile ? '12px' : '14px' 
+                        }}>
+                          {row.value}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Box>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* No Pending Bookings Dialog */}
       <Dialog
         open={openNoPending}
         onClose={() => setOpenNoPending(false)}
