@@ -26,7 +26,8 @@ const ALLOWED_ORIGINS = [
   'https://sagradago.netlify.app',
   'http://localhost:5001',
   'http://localhost:5000',
-  'http://localhost:5000/api/health'
+  'http://localhost:5000/api/health',
+  'https://sagradago.onrender.com/api/health'
 ];
 
 // ===== CORS CONFIGURATION =====
