@@ -70,7 +70,7 @@ app.options('*', cors(corsOptions));
 app.use((req, res, next) => {
   const csp = [
     "default-src 'self'",
-    "connect-src 'self' blob: data: https://generativelanguage.googleapis.com https://*.sagradago.onrender.com https://*.sagradago-backend.onrender.com http://localhost:5000/api/health http://localhost:5173 http://localhost:5000 http://localhost:5001 https://*.supabase.co wss://*.supabase.co https://*.google.com https://www.google.com/recaptcha/",
+    "connect-src 'self' https://generativelanguage.googleapis.com https://*.sagradago.onrender.com https://*.sagradago-backend.onrender.com http://localhost:5000/api/health https://sagradago.onrender.com/api/health http://localhost:5173 http://localhost:5000 http://localhost:5001 https://*.supabase.co wss://*.supabase.co https://*.google.com https://www.google.com/recaptcha/",
     "script-src 'self' 'unsafe-inline' https://www.google.com/recaptcha/",
     "style-src 'self' 'unsafe-inline'",
     "frame-src https://www.google.com/recaptcha/",
