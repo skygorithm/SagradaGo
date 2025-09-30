@@ -66,6 +66,7 @@ const Volunteer = ({ open = false, onClose = () => {} }) => {
           <MenuItem value="Usher">Usher</MenuItem>
           <MenuItem value="Catechist">Catechist</MenuItem>
           <MenuItem value="Tech Team">Tech Team</MenuItem>
+          <MenuItem value="Tech Team">Others</MenuItem>
         </TextField>
 
         <Button

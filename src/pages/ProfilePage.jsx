@@ -1,60 +1,49 @@
-import React, { useState, useRef } from "react";
-import {
-  Container,
-  Typography,
-  Card,
-  CardContent,
-  Avatar,
-  Button,
-  TextField,
-  Divider,
-  Box,
-  IconButton,
-  Alert,
-  Snackbar,
-  Tooltip,
-  Chip,
-  LinearProgress,
+import React, { useState, useRef, useEffect } from "react";
+import { 
+  Container, Typography, Card, CardContent, Avatar, Button, TextField,
+  Divider, Box, IconButton, Alert, Snackbar, Tooltip, Chip, LinearProgress
 } from "@mui/material";
 import {
-  Edit,
-  Save,
-  Cancel,
-  PhotoCamera,
-  Person,
-  Email,
-  Phone,
-  Cake,
-  Upload,
-  CheckCircle,
-  Info,
+  Edit, Save, Cancel, PhotoCamera, Person, CheckCircle, Info, Upload
 } from "@mui/icons-material";
 import Layout from "../components/layout/Layout.jsx";
 import { usePopups } from "../context/PopupsContext.jsx";
 import { getLoggedInNavLinks } from "../config/navLinks.js";
-import { useAuth } from "../context/AuthContext.js"; // ✅ import AuthContext hook
+import { useAuth } from "../context/AuthContext.js";
 
 const ProfilePage = ({ onLogout, isLoggedIn }) => {
-  const { userProfile, updateProfile } = useAuth(); // ✅ get AuthContext stuff
+  const { userProfile, updateProfile } = useAuth();
 
+  const [profile, setProfile] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    contact: "",
+    birthday: "",
+    profilePicture: "/images/wired-outline-21-avatar-hover-jumping.webp",
+  });
+  const [originalProfile, setOriginalProfile] = useState({});
   const [editMode, setEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-
-  // Initialize profile from userProfile context OR defaults
-  const [profile, setProfile] = useState({
-    firstName: userProfile?.firstName || "Juan",
-    lastName: userProfile?.lastName || "Dela Cruz",
-    email: userProfile?.email || "juan@example.com",
-    contact: userProfile?.contact || "09123456789",
-    birthday: userProfile?.birthday || "1990-01-01",
-    profilePicture:
-      userProfile?.profilePicture ||
-      "/images/wired-outline-21-avatar-hover-jumping.webp",
-  });
-
-  const [originalProfile, setOriginalProfile] = useState({ ...profile });
   const fileInputRef = useRef(null);
+
+  // ✅ Sync local state with AuthContext whenever userProfile changes
+  useEffect(() => {
+    if (userProfile) {
+      setProfile({
+        firstName: userProfile.firstName || "",
+        lastName: userProfile.lastName || "",
+        email: userProfile.email || "",
+        contact: userProfile.contact || "",
+        birthday: userProfile.birthday || "",
+        profilePicture:
+          userProfile.profilePicture ||
+          "/images/wired-outline-21-avatar-hover-jumping.webp",
+      });
+      setOriginalProfile(userProfile);
+    }
+  }, [userProfile]);
 
   const handleChange = (e) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
@@ -83,18 +72,14 @@ const ProfilePage = ({ onLogout, isLoggedIn }) => {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     setLoading(true);
-
-    // Simulate API call
     setTimeout(() => {
       setOriginalProfile({ ...profile });
       setEditMode(false);
       setLoading(false);
       setShowSuccess(true);
-
-      // ✅ Update global AuthContext + persist
-      updateProfile(profile);
+      updateProfile(profile); // ✅ update in global AuthContext
     }, 1500);
   };
 
@@ -110,33 +95,25 @@ const ProfilePage = ({ onLogout, isLoggedIn }) => {
 
   const isProfileComplete = () => {
     return Object.entries(profile).every(([key, value]) => {
-      if (key === "profilePicture") return true; // not required
+      if (key === "profilePicture") return true;
       return value && value.trim() !== "";
     });
   };
 
   const getProfileCompleteness = () => {
-    const fields = Object.entries(profile).filter(([k]) => k !== "profilePicture");
-    const completedFields = fields.filter(([_, value]) => value && value.trim() !== "");
+    const fields = Object.entries(profile).filter(
+      ([k]) => k !== "profilePicture"
+    );
+    const completedFields = fields.filter(
+      ([_, value]) => value && value.trim() !== ""
+    );
     return Math.round((completedFields.length / fields.length) * 100);
   };
 
-  const {
-    setDonateOpen,
-    setBookingOpen,
-    setVolunteerOpen,
-    donateOpen,
-    bookingOpen,
-    volunteerOpen,
-  } = usePopups();
-
-  const navLinks = getLoggedInNavLinks({
-    setDonateOpen,
-    setBookingOpen,
-    setVolunteerOpen,
-    donateOpen,
-    bookingOpen,
-    volunteerOpen,
+  const { setDonateOpen, setBookingOpen, setVolunteerOpen, donateOpen, bookingOpen, volunteerOpen } = usePopups();
+  const navLinks = getLoggedInNavLinks({ 
+    setDonateOpen, setBookingOpen, setVolunteerOpen, 
+    donateOpen, bookingOpen, volunteerOpen 
   });
 
   return (

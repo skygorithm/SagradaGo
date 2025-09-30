@@ -7,9 +7,7 @@ import {
   CardContent,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import LoginModal from "../config/UserAuth.jsx";
 import Chatbot from "../components/Chatbot.jsx";
 import Layout from "../components/layout/Layout.jsx";
 
@@ -17,11 +15,11 @@ const FeatureCard = styled(Card)({
   height: "100%",
   display: "flex",
   flexDirection: "column",
+  cursor: "pointer",
   transition: "transform 0.3s ease-in-out",
   "&:hover": { transform: "translateY(-6px)" },
 });
 
-// Keyframes for coin-like spin
 const splashStyles = `
 @keyframes coinSpin {
   0%   { transform: perspective(600px) rotateY(0deg) rotateX(0deg); opacity: 1; }
@@ -32,58 +30,45 @@ const splashStyles = `
 }
 `;
 
-const HomePageLoggedOut = () => {
+const HomePageLoggedOut = ({ onLoginClick, onSignupClick }) => {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const [loginOpen, setLoginOpen] = useState(false);
-  const [isSignupMode, setIsSignupMode] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Splash screen duration (1s like a coin spin)
+    // Splash screen duration
     const timer = setTimeout(() => {
       setLoading(false);
     }, 1000);
     return () => clearTimeout(timer);
   }, []);
 
-  const handleRequireLogin = (signup = false) => {
-    setIsSignupMode(signup);
-    setLoginOpen(true);
-  };
-
-  const handleLoginSuccess = () => {
-    login();
-    navigate("/home");
-  };
-
   const navLinks = useMemo(
     () => [
       { path: "/", label: "HOME", highlight: true },
-      { label: "DONATE", action: () => handleRequireLogin(false) },
-      { label: "BOOK A SERVICE", action: () => handleRequireLogin(false) },
+      { label: "DONATE", action: () => onLoginClick() },
+      { label: "BOOK A SERVICE", action: () => onLoginClick() },
       { path: "/events", label: "EVENTS" },
-      { label: "BE A VOLUNTEER", action: () => handleRequireLogin(false) },
+      { label: "BE A VOLUNTEER", action: () => onLoginClick() },
       { path: "/explore-parish", label: "VIRTUAL TOUR" },
     ],
-    []
+    [onLoginClick]
   );
 
   const features = [
     {
       title: "Book Sacrament",
       description: "Schedule your sacrament appointment with ease.",
-      action: () => handleRequireLogin(false),
+      action: () => onLoginClick(),
     },
     {
       title: "Online Donations",
       description: "Support our parish through secure online donations.",
-      action: () => handleRequireLogin(false),
+      action: () => onLoginClick(),
     },
     {
       title: "Volunteer Programs",
       description: "Join our community of volunteers and make a difference.",
-      action: () => handleRequireLogin(false),
+      action: () => onLoginClick(),
     },
     {
       title: "Virtual Tour",
@@ -115,13 +100,13 @@ const HomePageLoggedOut = () => {
     <Layout
       isLoggedIn={false}
       navLinks={navLinks}
-      onLoginClick={() => handleRequireLogin(false)}
-      onSignupClick={() => handleRequireLogin(true)}
+      onLoginClick={onLoginClick}
+      onSignupClick={onSignupClick}
     >
       {/* Hero */}
       <section className="relative h-[60vh] min-h-[400px] overflow-hidden">
         <img
-          src="/images/SAGRADA-FAMILIA-PARISH.jpg" // ✅ Path from public/images
+          src="/images/SAGRADA-FAMILIA-PARISH.jpg"
           alt="Church"
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -135,7 +120,7 @@ const HomePageLoggedOut = () => {
               Building stronger faith through technology & community.
             </p>
             <button
-              onClick={() => handleRequireLogin(false)}
+              onClick={onLoginClick}
               className="px-6 py-3 bg-[#E1D5B8] text-black rounded-lg shadow-lg hover:bg-[#d4c4a1]"
             >
               Book now
@@ -174,14 +159,6 @@ const HomePageLoggedOut = () => {
         </Container>
       </section>
 
-      {loginOpen && (
-        <LoginModal
-          open={loginOpen}
-          onClose={() => setLoginOpen(false)}
-          onLoginSuccess={handleLoginSuccess}
-          isSignupMode={isSignupMode}
-        />
-      )}
       <Chatbot />
     </Layout>
   );

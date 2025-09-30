@@ -87,6 +87,11 @@ const getFieldDisplayName = (fieldName) => {
     status: "Status",
     created_at: "Created At",
     updated_at: "Updated At",
+    username: "Username",
+    password: "Password",
+    role: "Role",
+    is_active: "Active Status",
+    last_login: "Last Login",
   };
   return (
     map[fieldName] ||
@@ -103,12 +108,17 @@ const getFieldInputType = (fieldName) => {
     mobile: "tel",
     bday: "date",
     marital_status: "select",
-    address: "text",
+    address: "textarea",
     email: "email",
     request_type: "select",
     status: "select",
     created_at: "datetime-local",
     updated_at: "datetime-local",
+    username: "text",
+    password: "password",
+    role: "select",
+    is_active: "select",
+    last_login: "datetime-local",
   };
   
   return typeMap[fieldName] || "text";
@@ -167,6 +177,17 @@ const getSelectOptions = (fieldName, users) => {
       { value: "processing", label: "Processing" },
       { value: "completed", label: "Completed" },
       { value: "cancelled", label: "Cancelled" },
+    ],
+    role: [
+      { value: "admin", label: "Administrator" },
+      { value: "staff", label: "Staff" },
+      { value: "user", label: "User" },
+      { value: "secretary", label: "Secretary" },
+      { value: "priest", label: "Priest" },
+    ],
+    is_active: [
+      { value: true, label: "Active" },
+      { value: false, label: "Inactive" },
     ],
   };
 
@@ -409,7 +430,18 @@ const ManagementTablesView = ({
       });
     } else {
       fields.forEach(field => {
-        initialFormState[field] = '';
+        // Set default values for new records
+        if (field === 'is_active') {
+          initialFormState[field] = true;
+        } else if (field === 'role') {
+          initialFormState[field] = 'user';
+        } else if (field === 'gender') {
+          initialFormState[field] = '';
+        } else if (field === 'marital_status') {
+          initialFormState[field] = '';
+        } else {
+          initialFormState[field] = '';
+        }
       });
     }
     
@@ -491,8 +523,37 @@ const ManagementTablesView = ({
 
     try {
       const saveData = { ...formState };
+      
+      // Handle mobile number formatting
       if (saveData.mobile) {
         saveData.mobile = saveData.mobile.replace(/\D/g, '');
+      }
+
+      // Validate required fields based on table
+      if (selectedTable === 'users_tbl') {
+        if (!saveData.firstname || !saveData.lastname || !saveData.email) {
+          setError("First name, last name, and email are required.");
+          setSaving(false);
+          return;
+        }
+        
+        if (!editingRecordLocal && !saveData.password) {
+          setError("Password is required for new users.");
+          setSaving(false);
+          return;
+        }
+
+        if (saveData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(saveData.email)) {
+          setError("Please enter a valid email address.");
+          setSaving(false);
+          return;
+        }
+
+        if (saveData.mobile && !validatePhilippineMobile(saveData.mobile)) {
+          setError("Please enter a valid Philippine mobile number.");
+          setSaving(false);
+          return;
+        }
       }
 
       if (editingRecordLocal) {
@@ -603,13 +664,15 @@ const ManagementTablesView = ({
           </InputLabel>
           <Select
             labelId={`${field}-label`}
-            value={currentValue || ""}
+            value={currentValue !== undefined ? currentValue : ""}
             onChange={(e) => handleFormFieldChange(field, e.target.value)}
             label={getFieldDisplayName(field)}
           >
-            <MenuItem value="" disabled>
-              <em>Select {getFieldDisplayName(field).toLowerCase()}</em>
-            </MenuItem>
+            {field !== 'is_active' && (
+              <MenuItem value="" disabled>
+                <em>Select {getFieldDisplayName(field).toLowerCase()}</em>
+              </MenuItem>
+            )}
             {options.map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
@@ -666,6 +729,22 @@ const ManagementTablesView = ({
             "Please enter a valid email address" : 
             "example@domain.com"
           }
+          required={selectedTable === 'users_tbl'}
+        />
+      );
+    }
+
+    if (inputType === "password") {
+      return (
+        <TextField
+          fullWidth
+          type="password"
+          label={getFieldDisplayName(field)}
+          value={currentValue || ""}
+          onChange={(e) => handleFormFieldChange(field, e.target.value)}
+          helperText={editingRecordLocal ? "Leave blank to keep current password" : "Enter a secure password (minimum 6 characters)"}
+          required={!editingRecordLocal}
+          inputProps={{ minLength: 6 }}
         />
       );
     }
@@ -702,6 +781,20 @@ const ManagementTablesView = ({
       );
     }
 
+    if (inputType === "textarea") {
+      return (
+        <TextField
+          fullWidth
+          label={getFieldDisplayName(field)}
+          value={currentValue || ""}
+          onChange={(e) => handleFormFieldChange(field, e.target.value)}
+          multiline
+          rows={3}
+          helperText="Complete address including house number, street, and city"
+        />
+      );
+    }
+
     return (
       <TextField
         fullWidth
@@ -709,15 +802,14 @@ const ManagementTablesView = ({
         label={getFieldDisplayName(field)}
         value={currentValue || ""}
         onChange={(e) => handleFormFieldChange(field, e.target.value)}
-        multiline={["address", "notes", "description"].includes(field)}
-        rows={["address", "notes", "description"].includes(field) ? 3 : 1}
         helperText={
           ["firstname", "middle", "lastname"].includes(field) 
             ? "Enter full name (no nicknames)" 
-            : field === "address"
-              ? "Complete address including house number, street, and city"
+            : field === "username"
+              ? "Username for login (must be unique)"
               : ""
         }
+        required={["firstname", "lastname", "email"].includes(field) && selectedTable === 'users_tbl'}
       />
     );
   };
@@ -760,7 +852,7 @@ const ManagementTablesView = ({
             }}
           >
             <Box sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
                 Management Tables
               </Typography>
               {tables.map((tbl) => (
@@ -784,7 +876,7 @@ const ManagementTablesView = ({
         </>
       ) : (
         <Paper sx={{ p: 2, width: 200, minWidth: 200, height: 'fit-content' }}>
-          <Typography variant="h6" gutterBottom>
+          <Typography variant="h6" fontWeight={600} gutterBottom>
             Management Tables
           </Typography>
           {tables.map((tbl) => (

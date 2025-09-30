@@ -1,3 +1,4 @@
+// src/components/layout/Layout.jsx
 import React from "react";
 import Navbar from "./Navbar.jsx";
 import Footer from "./Footer.jsx";
@@ -7,7 +8,15 @@ import Bookings from "../../pages/Bookings.jsx";
 import Volunteer from "../../pages/Volunteer.jsx";
 import Chatbot from "../Chatbot.jsx";
 
-const Layout = ({ onLoginClick, onSignupClick, navLinks, children }) => {
+const Layout = ({ 
+  isLoggedIn = false,
+  onLogout,
+  onLoginClick, 
+  onSignupClick, 
+  navLinks = [], 
+  children,
+  userProfile
+}) => {
   const {
     donateOpen,
     bookingOpen,
@@ -17,20 +26,36 @@ const Layout = ({ onLoginClick, onSignupClick, navLinks, children }) => {
     setVolunteerOpen,
   } = usePopups();
 
+  // Defensive check: If logged in but no navLinks, provide empty array
+  const safeNavLinks = navLinks || [];
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar
+        isLoggedIn={isLoggedIn}
+        onLogout={onLogout}
         onLoginClick={onLoginClick}
         onSignupClick={onSignupClick}
-        navLinks={navLinks}
+        navLinks={safeNavLinks}
+        userProfile={userProfile}
       />
       <main className="flex-grow">{children}</main>
       <Footer />
 
-      {/* Global Popups */}
-      <Donation open={donateOpen} onClose={() => setDonateOpen(false)} />
-      <Bookings open={bookingOpen} onClose={() => setBookingOpen(false)} />
-      <Volunteer open={volunteerOpen} onClose={() => setVolunteerOpen(false)} />
+      {/* Global Popups - only show if logged in */}
+      {isLoggedIn && (
+        <>
+          {donateOpen && (
+            <Donation open={donateOpen} onClose={() => setDonateOpen(false)} />
+          )}
+          {bookingOpen && (
+            <Bookings open={bookingOpen} onClose={() => setBookingOpen(false)} />
+          )}
+          {volunteerOpen && (
+            <Volunteer open={volunteerOpen} onClose={() => setVolunteerOpen(false)} />
+          )}
+        </>
+      )}
 
       <Chatbot />
     </div>

@@ -1,5 +1,5 @@
 // src/pages/EventsPage.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Typography,
@@ -13,16 +13,23 @@ import {
   DialogActions,
   IconButton,
   Divider,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import { Event, Schedule, LocationOn, Close, CalendarMonth } from "@mui/icons-material";
 import { format, differenceInDays, startOfDay } from "date-fns";
 import Layout from "../components/layout/Layout.jsx";
 import { usePopups } from "../context/PopupsContext.jsx";
 import { getLoggedInNavLinks, getLoggedOutNavLinks } from "../config/navLinks.js";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { supabase } from "../config/supabase.js";
 
 const EventsPage = ({ isLoggedIn, onLogout, onLoginClick, onSignupClick }) => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const {
     setDonateOpen,
@@ -45,59 +52,31 @@ const EventsPage = ({ isLoggedIn, onLogout, onLoginClick, onSignupClick }) => {
       })
     : getLoggedOutNavLinks({ onLoginClick });
 
-  // sample events
-  const events = [
-    {
-      id: "1",
-      title: "Diocesan Youth Day",
-      date: "2025-02-23",
-      description:
-        "A church event for the Youth of the Diocese. Join us for a day of fellowship, worship, and activities designed to strengthen our young community members in faith.",
-      img: "/images/dyd.jpg",
-      location: "Sagrada Familia Parish",
-      time: "9:00 AM - 5:00 PM",
-    },
-    {
-      id: "2",
-      title: "Sagrada Familia Parish Feast Day",
-      date: "2025-03-23",
-      description:
-        "A church event for Feast Day. Celebrate our patron saint with special masses, community feast, cultural presentations, and blessing ceremonies.",
-      img: "/images/pista.jpg",
-      location: "Sagrada Familia Parish",
-      time: "8:00 AM - 6:00 PM",
-    },
-    {
-      id: "3",
-      title: "Sacerdotal Anniversary",
-      date: "2025-11-29",
-      description:
-        "A church event for Sacerdotal Anniversary of the Parish Priest. Join us in celebrating years of faithful service and dedication to our parish community.",
-      img: "/images/sarcedotal.jpg",
-      location: "Sagrada Familia Parish",
-      time: "7:00 AM - 8:00 PM",
-    },
-    {
-      id: "4",
-      title: "Christmas Mass",
-      date: "2025-12-25",
-      description:
-        "Special Christmas Mass celebration. Experience the joy and wonder of Christ's birth with our midnight mass and Christmas morning services.",
-      img: "/images/christmas.jpg",
-      location: "Sagrada Familia Parish",
-      time: "12:00 AM - 1:30 AM",
-    },
-    {
-      id: "5",
-      title: "New Year Mass",
-      date: "2026-01-01",
-      description:
-        "New Year Mass and celebration. Begin the new year with prayer, thanksgiving, and renewed commitment to faith and community service.",
-      img: "/images/birthday.jpg",
-      location: "Sagrada Familia Parish",
-      time: "12:00 AM - 1:30 AM",
-    },
-  ];
+  // Fetch events from Supabase
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const { data, error } = await supabase
+          .from("events_tbl")
+          .select("*")
+          .order("date", { ascending: true });
+
+        if (error) throw error;
+
+        setEvents(data || []);
+      } catch (err) {
+        console.error("Error fetching events:", err);
+        setError("Failed to load events. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   const getDaysUntilEvent = (eventDate) => {
     const today = startOfDay(new Date());
@@ -163,141 +142,168 @@ const EventsPage = ({ isLoggedIn, onLogout, onLoginClick, onSignupClick }) => {
         </Container>
       </Box>
 
+      {/* Loading State */}
+      {loading && (
+        <Container maxWidth="lg" sx={{ py: 8, textAlign: "center" }}>
+          <CircularProgress sx={{ color: "#E1D5B8" }} />
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
+            Loading events...
+          </Typography>
+        </Container>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <Container maxWidth="lg" sx={{ pb: 8 }}>
+          <Alert severity="error">{error}</Alert>
+        </Container>
+      )}
+
       {/* Event Grid */}
-      <Container maxWidth="lg" sx={{ pb: 8 }}>
-        <Grid container spacing={4}>
-          {events.map((ev) => {
-            const status = getEventStatus(ev.date);
-            const isPast = status === "past";
-            return (
-              <Grid item xs={12} sm={6} lg={4} key={ev.id}>
-                <Paper
-                  elevation={3}
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    borderRadius: 3,
-                    overflow: "hidden",
-                    opacity: isPast ? 0.7 : 1,
-                    cursor: isPast ? "default" : "pointer",
-                    transition: "all 0.3s ease-in-out",
-                    "&:hover": {
-                      transform: isPast ? "none" : "translateY(-8px)",
-                      boxShadow: isPast ? 3 : 8,
-                      "& .event-img": {
-                        transform: isPast ? "none" : "scale(1.05)",
-                      },
-                    },
-                  }}
-                  onClick={() => !isPast && handleEventClick(ev)}
-                >
-                  <Box sx={{ position: "relative", overflow: "hidden" }}>
-                    <Box
-                      className="event-img"
+      {!loading && !error && (
+        <Container maxWidth="lg" sx={{ pb: 8 }}>
+          {events.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <Typography variant="h6" color="text.secondary">
+                No events scheduled at this time.
+              </Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={4}>
+              {events.map((ev) => {
+                const status = getEventStatus(ev.date);
+                const isPast = status === "past";
+                return (
+                  <Grid item xs={12} sm={6} lg={4} key={ev.id}>
+                    <Paper
+                      elevation={3}
                       sx={{
-                        height: 200,
-                        backgroundImage: `url(${ev.img})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                        transition: "transform 0.3s ease-in-out",
-                      }}
-                    />
-                    <Chip
-                      label={statusLabel(status)}
-                      size="small"
-                      sx={{
-                        position: "absolute",
-                        top: 12,
-                        right: 12,
-                        backgroundColor: statusColor(status),
-                        color: "white",
-                        fontWeight: 600,
-                      }}
-                    />
-                  </Box>
-                  <Box sx={{ p: 3, flexGrow: 1, display: "flex", flexDirection: "column" }}>
-                    <Typography
-                      variant="h6"
-                      fontWeight="bold"
-                      gutterBottom
-                      sx={{
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        borderRadius: 3,
                         overflow: "hidden",
-                        minHeight: "3.2em",
+                        opacity: isPast ? 0.7 : 1,
+                        cursor: isPast ? "default" : "pointer",
+                        transition: "all 0.3s ease-in-out",
+                        "&:hover": {
+                          transform: isPast ? "none" : "translateY(-8px)",
+                          boxShadow: isPast ? 3 : 8,
+                          "& .event-img": {
+                            transform: isPast ? "none" : "scale(1.05)",
+                          },
+                        },
                       }}
+                      onClick={() => !isPast && handleEventClick(ev)}
                     >
-                      {ev.title}
-                    </Typography>
-                    <Box sx={{ mb: 2 }}>
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                        <Event sx={{ fontSize: 18, color: "#E1D5B8", mr: 1 }} />
-                        <Typography variant="body2" color="text.secondary">
-                          {format(new Date(ev.date), "EEEE, MMMM d, yyyy")}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                        <Schedule sx={{ fontSize: 18, color: "#E1D5B8", mr: 1 }} />
-                        <Typography variant="body2" color="text.secondary">
-                          {ev.time}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <LocationOn sx={{ fontSize: 18, color: "#E1D5B8", mr: 1 }} />
-                        <Typography variant="body2" color="text.secondary">
-                          {ev.location}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{
-                        display: "-webkit-box",
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                        flexGrow: 1,
-                        mb: 2,
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {ev.description}
-                    </Typography>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <Typography variant="caption" color="text.secondary" fontStyle="italic">
-                        {getDaysUntilEvent(ev.date)}
-                      </Typography>
-                      {!isPast && (
-                        <Button
-                          variant="contained"
-                          size="small"
-                          startIcon={<CalendarMonth />}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRegister(ev);
-                          }}
+                      <Box sx={{ position: "relative", overflow: "hidden" }}>
+                        <Box
+                          className="event-img"
                           sx={{
-                            backgroundColor: "#E1D5B8",
-                            "&:hover": { backgroundColor: "#D4C5A0" },
-                            borderRadius: 2,
-                            textTransform: "none",
-                            fontSize: "0.75rem",
+                            height: 200,
+                            backgroundImage: `url(${ev.img})`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                            transition: "transform 0.3s ease-in-out",
+                          }}
+                        />
+                        <Chip
+                          label={statusLabel(status)}
+                          size="small"
+                          sx={{
+                            position: "absolute",
+                            top: 12,
+                            right: 12,
+                            backgroundColor: statusColor(status),
+                            color: "white",
+                            fontWeight: 600,
+                          }}
+                        />
+                      </Box>
+                      <Box sx={{ p: 3, flexGrow: 1, display: "flex", flexDirection: "column" }}>
+                        <Typography
+                          variant="h6"
+                          fontWeight="bold"
+                          gutterBottom
+                          sx={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                            minHeight: "3.2em",
                           }}
                         >
-                          Register
-                        </Button>
-                      )}
-                    </Box>
-                  </Box>
-                </Paper>
-              </Grid>
-            );
-          })}
-        </Grid>
-      </Container>
+                          {ev.title}
+                        </Typography>
+                        <Box sx={{ mb: 2 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                            <Event sx={{ fontSize: 18, color: "#E1D5B8", mr: 1 }} />
+                            <Typography variant="body2" color="text.secondary">
+                              {format(new Date(ev.date), "EEEE, MMMM d, yyyy")}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                            <Schedule sx={{ fontSize: 18, color: "#E1D5B8", mr: 1 }} />
+                            <Typography variant="body2" color="text.secondary">
+                              {ev.time}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <LocationOn sx={{ fontSize: 18, color: "#E1D5B8", mr: 1 }} />
+                            <Typography variant="body2" color="text.secondary">
+                              {ev.location}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                            flexGrow: 1,
+                            mb: 2,
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          {ev.description}
+                        </Typography>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <Typography variant="caption" color="text.secondary" fontStyle="italic">
+                            {getDaysUntilEvent(ev.date)}
+                          </Typography>
+                          {!isPast && (
+                            <Button
+                              variant="contained"
+                              size="small"
+                              startIcon={<CalendarMonth />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRegister(ev);
+                              }}
+                              sx={{
+                                backgroundColor: "#E1D5B8",
+                                "&:hover": { backgroundColor: "#D4C5A0" },
+                                borderRadius: 2,
+                                textTransform: "none",
+                                fontSize: "0.75rem",
+                              }}
+                            >
+                              Register
+                            </Button>
+                          )}
+                        </Box>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          )}
+        </Container>
+      )}
 
       {/* Details Dialog */}
       <Dialog

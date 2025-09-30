@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+// src/pages/HomePageLoggedIn.jsx
+import React, { useEffect } from "react";
 import {
   Container,
   Typography,
@@ -8,6 +9,7 @@ import {
   Button,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import { useNavigate } from "react-router-dom";
 import Layout from "../components/layout/Layout.jsx";
 import { usePopups } from "../context/PopupsContext.jsx";
 import { getLoggedInNavLinks } from "../config/navLinks.js";
@@ -19,21 +21,12 @@ import Volunteer from "./Volunteer.jsx";
 const FeatureCard = styled(Card)({
   height: "100%",
   transition: "transform 0.3s ease",
+  cursor: "pointer",
   "&:hover": { transform: "translateY(-6px)" },
 });
 
-// 🔥 Keyframes for coin-like splash spin
-const splashStyles = `
-@keyframes coinSpin {
-  0%   { transform: perspective(600px) rotateY(0deg) rotateX(0deg); opacity: 1; }
-  25%  { transform: perspective(600px) rotateY(90deg) rotateX(10deg); opacity: 1; }
-  50%  { transform: perspective(600px) rotateY(180deg) rotateX(0deg); opacity: 1; }
-  75%  { transform: perspective(600px) rotateY(270deg) rotateX(-10deg); opacity: 1; }
-  100% { transform: perspective(600px) rotateY(360deg) rotateX(0deg); opacity: 0; }
-}
-`;
-
-const HomePageLoggedIn = ({ onLogout }) => {
+const HomePageLoggedIn = ({ onLogout, userProfile }) => {
+  const navigate = useNavigate();
   const {
     setDonateOpen,
     setBookingOpen,
@@ -43,15 +36,45 @@ const HomePageLoggedIn = ({ onLogout }) => {
     volunteerOpen,
   } = usePopups();
 
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
-    // Show splash animation for 1s
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    console.log("HomePageLoggedIn mounted with userProfile:", userProfile);
+    
+    // Safety check: if we don't have user profile after mount, something went wrong
+    if (!userProfile) {
+      console.warn("⚠️ HomePageLoggedIn mounted without userProfile");
+    }
+    
+    return () => {
+      console.log("HomePageLoggedIn unmounted");
+    };
+  }, [userProfile]);
+
+  // Early return with loading state if no user profile
+  if (!userProfile) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <img
+            src="/images/sagrada.png"
+            alt="Loading"
+            className="w-16 h-16 mx-auto mb-4 animate-pulse"
+          />
+          <p className="text-gray-600">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleLogout = () => {
+    console.log("Logout clicked from HomePageLoggedIn");
+    setDonateOpen(false);
+    setBookingOpen(false);
+    setVolunteerOpen(false);
+
+    if (onLogout) {
+      onLogout();
+    }
+  };
 
   const navLinks = getLoggedInNavLinks({
     setDonateOpen,
@@ -62,31 +85,19 @@ const HomePageLoggedIn = ({ onLogout }) => {
     volunteerOpen,
   });
 
-  // 🔥 Splash screen
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-white">
-        <style>{splashStyles}</style>
-        <img
-          src="/images/sagrada.png" 
-          alt="Sagrada Familia Parish Logo"
-          style={{
-            width: "120px",
-            height: "120px",
-            animation: "coinSpin 1s ease-in-out forwards",
-            transformStyle: "preserve-3d",
-          }}
-        />
-      </div>
-    );
-  }
+  console.log("HomePageLoggedIn rendering main content");
 
   return (
-    <Layout isLoggedIn={true} onLogout={onLogout} navLinks={navLinks}>
+    <Layout 
+      isLoggedIn={true} 
+      userProfile={userProfile}
+      onLogout={handleLogout} 
+      navLinks={navLinks}
+    >
       {/* Hero */}
       <section className="relative h-[60vh] overflow-hidden">
         <img
-          src="/images/SAGRADA-FAMILIA-PARISH.jpg" // ✅ from public/images
+          src="/images/SAGRADA-FAMILIA-PARISH.jpg"
           alt="Church"
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -153,9 +164,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
               </FeatureCard>
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
-              <FeatureCard
-                onClick={() => (window.location = "/explore-parish")}
-              >
+              <FeatureCard onClick={() => navigate("/explore-parish")}>
                 <CardContent>
                   <Typography fontWeight="bold">Virtual Tour</Typography>
                   <Typography color="text.secondary">
@@ -168,7 +177,7 @@ const HomePageLoggedIn = ({ onLogout }) => {
         </Container>
       </section>
 
-      {/* ✅ Popups */}
+      {/* Popups */}
       {donateOpen && (
         <Donation open={donateOpen} onClose={() => setDonateOpen(false)} />
       )}

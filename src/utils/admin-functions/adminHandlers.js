@@ -376,14 +376,49 @@ export const fetchSacramentTableData = async (
       setLoading(false);
       return;
     }
+
     let transformed = (data || []).map((r) => ({
       ...r,
       user_firstname: r.user_tbl?.user_firstname || "",
       user_lastname: r.user_tbl?.user_lastname || "",
     }));
+
+    // Fetch wedding details for wedding bookings
+    const weddingBookings = transformed.filter(
+      (b) => b.booking_sacrament?.toLowerCase() === "wedding"
+    );
+
+    if (weddingBookings.length > 0) {
+      const weddingIds = weddingBookings.map((b) => b.id);
+      const { data: weddingData, error: weddingError } = await supabase
+        .from("booking_wedding_docu_tbl")
+        .select("booking_id, groom_fullname, bride_fullname")
+        .in("booking_id", weddingIds);
+
+      if (!weddingError && weddingData) {
+        // Map wedding details back to bookings
+        transformed = transformed.map((booking) => {
+          if (booking.booking_sacrament?.toLowerCase() === "wedding") {
+            const weddingDetail = weddingData.find(
+              (w) => w.booking_id === booking.id
+            );
+            if (weddingDetail) {
+              return {
+                ...booking,
+                groom_fullname: weddingDetail.groom_fullname,
+                bride_fullname: weddingDetail.bride_fullname,
+              };
+            }
+          }
+          return booking;
+        });
+      }
+    }
+
     setSacramentTableData(transformed);
     setSacramentFilteredData(transformed);
   } catch (err) {
+    console.error("Error fetching sacrament data:", err);
   } finally {
     setLoading(false);
   }
@@ -424,8 +459,181 @@ export const handleDelete = async ({
   fetchStats,
 }) => {
   if (!window.confirm("Are you sure you want to delete this record?")) return;
+  
   try {
     const recordToDelete = tableData.find((r) => r.id === id);
+    
+    // Special handling for user_tbl due to foreign key constraints
+    if (selectedTable === "user_tbl") {
+      // Check for related bookings first
+      const { data: relatedBookings, error: checkBookingsError } = await supabase
+        .from("booking_tbl")
+        .select("id, booking_sacrament, booking_status, booking_date")
+        .eq("user_id", id);
+
+      if (checkBookingsError) {
+        throw new Error("Error checking related bookings: " + checkBookingsError.message);
+      }
+
+      // Check for related documents
+      const { data: relatedDocuments, error: checkDocumentsError } = await supabase
+        .from("document_tbl")
+        .select("id")
+        .eq("user_id", id);
+
+      if (checkDocumentsError) {
+        throw new Error("Error checking related documents: " + checkDocumentsError.message);
+      }
+
+      // Check for related donations
+      const { data: relatedDonations, error: checkDonationsError } = await supabase
+        .from("donation_tbl")
+        .select("id, donation_amount")
+        .eq("user_id", id);
+
+      if (checkDonationsError) {
+        throw new Error("Error checking related donations: " + checkDonationsError.message);
+      }
+
+      const totalRelatedRecords = (relatedBookings?.length || 0) + (relatedDocuments?.length || 0) + (relatedDonations?.length || 0);
+
+      if (totalRelatedRecords > 0) {
+        const relatedInfo = [];
+        if (relatedBookings?.length > 0) {
+          relatedInfo.push(`${relatedBookings.length} booking(s)`);
+        }
+        if (relatedDocuments?.length > 0) {
+          relatedInfo.push(`${relatedDocuments.length} document(s)`);
+        }
+        if (relatedDonations?.length > 0) {
+          relatedInfo.push(`${relatedDonations.length} donation(s)`);
+        }
+
+        const shouldDeleteAll = window.confirm(
+          `This user has ${relatedInfo.join(' and ')}.\n\n` +
+          `Do you want to delete the user along with all related records?\n\n` +
+          `⚠️ This action cannot be undone and will permanently remove:\n` +
+          `- The user account\n` +
+          `- All associated bookings\n` +
+          `- All associated documents\n` +
+          `- All associated donations\n\n` +
+          `Click OK to proceed or Cancel to abort.`
+        );
+
+        if (!shouldDeleteAll) {
+          setError && setError(
+            `Cannot delete user with existing related records. ` +
+            `The user has ${relatedInfo.join(' and ')} that must be handled first.`
+          );
+          return;
+        }
+
+        // Delete related records first
+        if (relatedBookings?.length > 0) {
+          // Move bookings to deleted_records first
+          for (const booking of relatedBookings) {
+            await supabase.from("deleted_records").insert({
+              original_table: "booking_tbl",
+              record_id: booking.id,
+              record_data: booking,
+              deleted_by: adminData ? `${adminData.firstName} ${adminData.lastName}` : "Unknown",
+              deleted_by_email: adminData?.email || "Unknown",
+              deletion_reason: "Cascade delete from user deletion"
+            });
+
+            await supabase.from("transaction_logs").insert({
+              table_name: "booking_tbl",
+              action: "CASCADE_DELETE",
+              record_id: booking.id,
+              old_data: booking,
+              new_data: null,
+              performed_by: adminData ? `${adminData.firstName} ${adminData.lastName}` : "Unknown",
+              performed_by_email: adminData?.email || "Unknown",
+            });
+          }
+
+          // Delete bookings
+          const { error: deleteBookingsError } = await supabase
+            .from("booking_tbl")
+            .delete()
+            .eq("user_id", id);
+
+          if (deleteBookingsError) {
+            throw new Error("Error deleting related bookings: " + deleteBookingsError.message);
+          }
+        }
+
+        if (relatedDocuments?.length > 0) {
+          // Move documents to deleted_records first
+          for (const document of relatedDocuments) {
+            await supabase.from("deleted_records").insert({
+              original_table: "document_tbl",
+              record_id: document.id,
+              record_data: document,
+              deleted_by: adminData ? `${adminData.firstName} ${adminData.lastName}` : "Unknown",
+              deleted_by_email: adminData?.email || "Unknown",
+              deletion_reason: "Cascade delete from user deletion"
+            });
+
+            await supabase.from("transaction_logs").insert({
+              table_name: "document_tbl",
+              action: "CASCADE_DELETE",
+              record_id: document.id,
+              old_data: document,
+              new_data: null,
+              performed_by: adminData ? `${adminData.firstName} ${adminData.lastName}` : "Unknown",
+              performed_by_email: adminData?.email || "Unknown",
+            });
+          }
+
+          // Delete documents
+          const { error: deleteDocumentsError } = await supabase
+            .from("document_tbl")
+            .delete()
+            .eq("user_id", id);
+
+          if (deleteDocumentsError) {
+            throw new Error("Error deleting related documents: " + deleteDocumentsError.message);
+          }
+        }
+
+        if (relatedDonations?.length > 0) {
+          // Move donations to deleted_records first
+          for (const donation of relatedDonations) {
+            await supabase.from("deleted_records").insert({
+              original_table: "donation_tbl",
+              record_id: donation.id,
+              record_data: donation,
+              deleted_by: adminData ? `${adminData.firstName} ${adminData.lastName}` : "Unknown",
+              deleted_by_email: adminData?.email || "Unknown",
+              deletion_reason: "Cascade delete from user deletion"
+            });
+
+            await supabase.from("transaction_logs").insert({
+              table_name: "donation_tbl",
+              action: "CASCADE_DELETE",
+              record_id: donation.id,
+              old_data: donation,
+              new_data: null,
+              performed_by: adminData ? `${adminData.firstName} ${adminData.lastName}` : "Unknown",
+              performed_by_email: adminData?.email || "Unknown",
+            });
+          }
+
+          // Delete donations
+          const { error: deleteDonationsError } = await supabase
+            .from("donation_tbl")
+            .delete()
+            .eq("user_id", id);
+
+          if (deleteDonationsError) {
+            throw new Error("Error deleting related donations: " + deleteDonationsError.message);
+          }
+        }
+      }
+    }
+
+    // Now proceed with the original deletion logic
     const { error: insertError } = await supabase.from("deleted_records").insert({
       original_table: selectedTable,
       record_id: id,
@@ -433,7 +641,9 @@ export const handleDelete = async ({
       deleted_by: adminData ? `${adminData.firstName} ${adminData.lastName}` : "Unknown",
       deleted_by_email: adminData?.email || "Unknown",
     });
+    
     if (insertError) throw insertError;
+
     await supabase.from("transaction_logs").insert({
       table_name: selectedTable,
       action: "DELETE",
@@ -443,12 +653,20 @@ export const handleDelete = async ({
       performed_by: adminData ? `${adminData.firstName} ${adminData.lastName}` : "Unknown",
       performed_by_email: adminData?.email || "Unknown",
     });
+
     const { error: deleteError } = await supabase.from(selectedTable).delete().eq("id", id);
     if (deleteError) throw deleteError;
-    setSuccess && setSuccess("Record moved to trash");
+
+    const successMessage = selectedTable === "user_tbl" && tableData.find(r => r.id === id) 
+      ? "User and all related records moved to trash"
+      : "Record moved to trash";
+    
+    setSuccess && setSuccess(successMessage);
     handleTableSelect && handleTableSelect(selectedTable);
     fetchStats && fetchStats();
+
   } catch (error) {
+    console.error("Delete operation failed:", error);
     setError && setError("Error deleting record: " + error.message);
   }
 };

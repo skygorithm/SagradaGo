@@ -35,6 +35,9 @@ import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import ReceiptIcon from "@mui/icons-material/Receipt";
+import { supabase } from "../../config/supabase";
 
 const capitalizeWords = (str) => {
   if (!str || typeof str !== "string") return str;
@@ -122,6 +125,15 @@ const getStatusStyle = (status) => {
         textColor: "#1976d2",
       };
   }
+};
+
+const statusColors = {
+  approved: "success",
+  pending: "warning",
+  rejected: "error",
+  cancelled: "default",
+  confirmed: "success",
+  completed: "success",
 };
 
 const formatDisplayValue = (field, value) => {
@@ -223,6 +235,8 @@ const getFieldDisplayName = (field) => {
     reference_number: "Reference Number",
     booking_reference: "Booking Reference",
     transaction_id: "Transaction ID",
+    groom_fullname: "Groom Name",
+    bride_fullname: "Bride Name",
   };
 
   return (
@@ -330,6 +344,67 @@ const SacramentBookingsView = (props) => {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [baptismDetailsMap, setBaptismDetailsMap] = useState({});
+  const [weddingDetailsMap, setWeddingDetailsMap] = useState({});
+
+  // Fetch sacrament-specific details from their respective tables
+  useEffect(() => {
+    const fetchSacramentDetails = async () => {
+      // Fetch baptism details
+      const baptismBookings = (sacramentFilteredData || []).filter(
+        (b) => b.booking_sacrament?.toLowerCase() === "baptism"
+      );
+      
+      if (baptismBookings.length > 0) {
+        const baptismIds = baptismBookings.map((b) => b.id);
+        const { data: baptismData, error: baptismError } = await supabase
+          .from("booking_baptism_docu_tbl")
+          .select("booking_id, baby_name, baby_bday, mother_name, father_name")
+          .in("booking_id", baptismIds);
+        
+        if (!baptismError && baptismData) {
+          const baptismMap = {};
+          baptismData.forEach((b) => {
+            baptismMap[b.booking_id] = {
+              baby_name: b.baby_name,
+              baby_bday: b.baby_bday,
+              mother_name: b.mother_name,
+              father_name: b.father_name,
+            };
+          });
+          setBaptismDetailsMap(baptismMap);
+        }
+      }
+
+      // Fetch wedding details
+      const weddingBookings = (sacramentFilteredData || []).filter(
+        (b) => b.booking_sacrament?.toLowerCase() === "wedding"
+      );
+      
+      if (weddingBookings.length > 0) {
+        const weddingIds = weddingBookings.map((b) => b.id);
+        const { data: weddingData, error: weddingError } = await supabase
+          .from("booking_wedding_docu_tbl")
+          .select("booking_id, groom_fullname, bride_fullname")
+          .in("booking_id", weddingIds);
+        
+        if (!weddingError && weddingData) {
+          const weddingMap = {};
+          weddingData.forEach((w) => {
+            weddingMap[w.booking_id] = {
+              groom_fullname: w.groom_fullname,
+              bride_fullname: w.bride_fullname,
+            };
+          });
+          setWeddingDetailsMap(weddingMap);
+        }
+      }
+    };
+    
+    fetchSacramentDetails();
+  }, [sacramentFilteredData]);
 
   // Debug effect to track filter changes
   useEffect(() => {
@@ -355,6 +430,11 @@ const SacramentBookingsView = (props) => {
   const visibleFields = currentFields.filter(
     (f) => sacramentVisibleColumns[f] !== false
   );
+
+  const handleViewDetailsClick = (row) => {
+    setSelectedRecord(row);
+    setDetailsDialogOpen(true);
+  };
 
   const handleEditClick = (row) => {
     handleSacramentEditDialog?.(row);
@@ -730,6 +810,14 @@ const SacramentBookingsView = (props) => {
                         </TableCell>
                       ))}
                       <TableCell>
+                        <Tooltip title="View Details">
+                          <IconButton
+                            onClick={() => handleViewDetailsClick(row)}
+                            sx={{ color: "#6B5F32" }}
+                          >
+                            <VisibilityIcon />
+                          </IconButton>
+                        </Tooltip>
                         <Tooltip title="Edit">
                           <IconButton
                             onClick={() => handleEditClick(row)}
@@ -791,6 +879,177 @@ const SacramentBookingsView = (props) => {
           <Button onClick={confirmDelete} color="error" variant="contained">
             Delete
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Booking Details Dialog */}
+      <Dialog 
+        open={detailsDialogOpen} 
+        onClose={() => setDetailsDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 600, pb: 1 }}>
+          {selectedRecord?.booking_sacrament && capitalizeWords(selectedRecord.booking_sacrament)}
+        </DialogTitle>
+        <DialogContent>
+          {selectedRecord && (
+            <Box>
+              {/* Couple Names for Wedding */}
+              {selectedRecord.booking_sacrament?.toLowerCase() === "wedding" && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography 
+                    variant="body1" 
+                    sx={{ 
+                      color: "#6B5F32", 
+                      fontWeight: 500 
+                    }}
+                  >
+                    {weddingDetailsMap[selectedRecord.id]?.groom_fullname || selectedRecord.groom_fullname || "N/A"} & {weddingDetailsMap[selectedRecord.id]?.bride_fullname || selectedRecord.bride_fullname || "N/A"}
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Baby Details for Baptism */}
+              {selectedRecord.booking_sacrament?.toLowerCase() === "baptism" && 
+               baptismDetailsMap[selectedRecord.id] && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography 
+                    variant="body1" 
+                    sx={{ 
+                      color: "#6B5F32", 
+                      fontWeight: 600,
+                      mb: 1
+                    }}
+                  >
+                    {baptismDetailsMap[selectedRecord.id].baby_name || "N/A"}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Birthday:</strong> {baptismDetailsMap[selectedRecord.id].baby_bday ? new Date(baptismDetailsMap[selectedRecord.id].baby_bday).toLocaleDateString() : "N/A"}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Father:</strong> {baptismDetailsMap[selectedRecord.id].father_name || "N/A"}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    <strong>Mother:</strong> {baptismDetailsMap[selectedRecord.id].mother_name || "N/A"}
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Date and Time */}
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                {selectedRecord.booking_date && new Date(selectedRecord.booking_date).toLocaleDateString()} at{" "}
+                {selectedRecord.booking_time}
+              </Typography>
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* Pax */}
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="body2">
+                  <strong>Pax:</strong> {selectedRecord.booking_pax || "N/A"}
+                </Typography>
+              </Box>
+
+              {/* Price */}
+              <Box sx={{ mb: 1 }}>
+                <Typography variant="body2">
+                  <strong>Price:</strong> ₱{selectedRecord.price?.toLocaleString() || "0"}
+                </Typography>
+              </Box>
+
+              {/* Status */}
+              <Box sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography variant="body2">
+                  <strong>Status:</strong>
+                </Typography>
+                <Chip
+                  label={capitalizeWords(String(selectedRecord.booking_status || ""))}
+                  size="small"
+                  color={statusColors[selectedRecord.booking_status] || "default"}
+                />
+              </Box>
+
+              {/* Payment Status */}
+              {selectedRecord.paid !== undefined && selectedRecord.paid !== null && (
+                <Box sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
+                  <Typography variant="body2">
+                    <strong>Payment:</strong>
+                  </Typography>
+                  <Chip
+                    label={String(selectedRecord.paid).toLowerCase() === "true" || selectedRecord.paid === true ? "Paid" : "Not Yet Paid"}
+                    size="small"
+                    sx={{
+                      backgroundColor: String(selectedRecord.paid).toLowerCase() === "true" || selectedRecord.paid === true ? "#e8f5e8" : "#fff3e0",
+                      color: String(selectedRecord.paid).toLowerCase() === "true" || selectedRecord.paid === true ? "#2e7d32" : "#f57c00",
+                      fontWeight: 600,
+                    }}
+                  />
+                </Box>
+              )}
+
+              {/* Booked on */}
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 2 }}>
+                Booked on{" "}
+                {selectedRecord.date_created && new Date(selectedRecord.date_created).toLocaleString("en-US", {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
+              </Typography>
+
+              {/* Transaction ID */}
+              {selectedRecord.booking_transaction && (
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Transaction ID: {selectedRecord.booking_transaction}
+                </Typography>
+              )}
+
+              {/* View Receipt Button */}
+              {selectedRecord.payment_receipts && (
+                <Box mt={2}>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    startIcon={<ReceiptIcon sx={{ fontSize: 16 }} />}
+                    component="a"
+                    href={selectedRecord.payment_receipts}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      color: "#6B5F32",
+                      borderColor: "#E1D5B8",
+                      "&:hover": {
+                        borderColor: "#d1c5a8",
+                        bgcolor: "#fafafa",
+                      },
+                    }}
+                  >
+                    View Receipt
+                  </Button>
+                </Box>
+              )}
+
+              {/* Cancel Booking Button */}
+              {selectedRecord.booking_status === "pending" && (
+                <Box mt={2}>
+                  <Button
+                    color="error"
+                    variant="outlined"
+                    fullWidth
+                    onClick={() => {
+                      handleSacramentDelete?.(selectedRecord.id);
+                      setDetailsDialogOpen(false);
+                    }}
+                  >
+                    Cancel Booking
+                  </Button>
+                </Box>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDetailsDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
     </>

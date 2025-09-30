@@ -1,14 +1,19 @@
+// src/components/layout/Navbar.jsx
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext.js";
 
-const Navbar = ({ navLinks, onLoginClick, onSignupClick }) => {
+const Navbar = ({
+  navLinks = [],
+  onLoginClick,
+  onSignupClick,
+  onLogout,
+  isLoggedIn = false,
+  userProfile,
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  const { isAuthenticated, userProfile, logout } = useAuth();
 
   const handleNavigation = (link) => {
     if (link.path) navigate(link.path);
@@ -18,18 +23,19 @@ const Navbar = ({ navLinks, onLoginClick, onSignupClick }) => {
   };
 
   const isActive = (link) => {
-    const anyModalOpen = navLinks.some(
-      (l) => typeof l.highlight === "boolean" && l.highlight
-    );
-    if (anyModalOpen) return link.highlight === true;
     if (link.path) return location.pathname === link.path;
     return false;
   };
 
+  // Defensive access to userProfile with fallbacks
   const profileImage =
     userProfile?.profilePicture ||
     userProfile?.profile_image_url ||
     "/images/wired-outline-21-avatar-hover-jumping.webp";
+
+  const firstName = userProfile?.firstName || userProfile?.user_firstname || userProfile?.first_name || "";
+  const lastName = userProfile?.lastName || userProfile?.user_lastname || userProfile?.last_name || "";
+  const displayName = firstName && lastName ? `${firstName} ${lastName}` : firstName || "User";
 
   return (
     <header className="bg-white shadow-lg border-b-2 border-[#E1D5B8] sticky top-0 z-50">
@@ -38,7 +44,7 @@ const Navbar = ({ navLinks, onLoginClick, onSignupClick }) => {
           {/* Logo */}
           <div
             className="flex items-center cursor-pointer group hover:scale-105 transition"
-            onClick={() => navigate(isAuthenticated ? "/home" : "/")}
+            onClick={() => navigate(isLoggedIn ? "/" : "/")}
           >
             <img
               src="/images/sagrada.png"
@@ -75,7 +81,7 @@ const Navbar = ({ navLinks, onLoginClick, onSignupClick }) => {
 
           {/* Right Section */}
           <div className="flex items-center space-x-3">
-            {!isAuthenticated ? (
+            {!isLoggedIn ? (
               <>
                 <button
                   onClick={onLoginClick}
@@ -93,11 +99,13 @@ const Navbar = ({ navLinks, onLoginClick, onSignupClick }) => {
             ) : (
               <>
                 <button
-                  onClick={logout}
+                  onClick={onLogout}
                   className="hidden md:flex bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 text-sm"
                 >
                   SIGN OUT
                 </button>
+
+                {/* Profile Menu */}
                 <div className="relative">
                   <button
                     onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -107,9 +115,13 @@ const Navbar = ({ navLinks, onLoginClick, onSignupClick }) => {
                       src={profileImage}
                       alt="Profile"
                       className="w-9 h-9 rounded-full border-2 border-[#E1D5B8] group-hover:border-[#6B5F32] group-hover:shadow group-hover:animate-bounce"
+                      onError={(e) => {
+                        e.target.src = "/images/wired-outline-21-avatar-hover-jumping.webp";
+                      }}
                     />
                     <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
                   </button>
+
                   {dropdownOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
                       <button
@@ -125,7 +137,7 @@ const Navbar = ({ navLinks, onLoginClick, onSignupClick }) => {
                         My History
                       </button>
                       <button
-                        onClick={logout}
+                        onClick={onLogout}
                         className="block w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50"
                       >
                         Sign out
@@ -175,7 +187,9 @@ const Navbar = ({ navLinks, onLoginClick, onSignupClick }) => {
                     isActive(link)
                       ? "bg-[#E1D5B8] text-[#6B5F32] shadow-sm"
                       : "text-gray-700 hover:bg-gray-50 hover:text-[#6B5F32]"
-                  } ${index === navLinks.length - 1 ? "" : "border-b border-gray-100"}`}
+                  } ${
+                    index === navLinks.length - 1 ? "" : "border-b border-gray-100"
+                  }`}
                 >
                   {link.label}
                 </button>
@@ -183,7 +197,7 @@ const Navbar = ({ navLinks, onLoginClick, onSignupClick }) => {
             </div>
 
             {/* User Section */}
-            {!isAuthenticated ? (
+            {!isLoggedIn ? (
               <div className="border-t border-gray-100 p-4 space-y-3">
                 <button
                   onClick={onLoginClick}
@@ -207,11 +221,13 @@ const Navbar = ({ navLinks, onLoginClick, onSignupClick }) => {
                       src={profileImage}
                       alt="Profile"
                       className="w-10 h-10 rounded-full border-2 border-[#E1D5B8]"
+                      onError={(e) => {
+                        e.target.src = "/images/wired-outline-21-avatar-hover-jumping.webp";
+                      }}
                     />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">
-                        {userProfile?.firstName || userProfile?.user_firstname}{" "}
-                        {userProfile?.lastName || userProfile?.user_lastname}
+                        {displayName}
                       </p>
                       <div className="flex items-center mt-1">
                         <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
@@ -240,7 +256,7 @@ const Navbar = ({ navLinks, onLoginClick, onSignupClick }) => {
                 {/* Sign Out Button */}
                 <div className="border-t border-gray-100 p-4">
                   <button
-                    onClick={logout}
+                    onClick={onLogout}
                     className="w-full py-3 px-4 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
                   >
                     SIGN OUT

@@ -134,7 +134,6 @@
         'booking_transaction': 'Transaction ID',
         'price': 'Price',
         'paid': 'Paid',
-        'form': 'Form'
       };
       
       return fieldMapping[fieldName] || fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
